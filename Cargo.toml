@@ -1,0 +1,7 @@
+[package]
+name = "tibrv"
+version = "0.1.0"
+authors = ["Richard Bradfield <bradfier@fstab.me>"]
+
+[dependencies]
+tibrv-sys = { version = "0.1", path = "tibrv-sys" }

@@ -1,0 +1,9 @@
+[package]
+name = "tibrv-sys"
+version = "0.1.0"
+authors = ["Richard Bradfield <bradfier@fstab.me>"]
+
+[dependencies]
+
+[build-dependencies]
+bindgen = "*"
