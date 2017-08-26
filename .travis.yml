@@ -1,0 +1,14 @@
+language: rust
+rust:
+    - stable
+    - beta
+    - nightly
+
+install:
+    - curl -O $TIBCO_SOURCE
+    - tar -xf tibco.tar.gz
+
+env:
+    global:
+        - TIBRV=$TRAVIS_BUILD_DIR/tibco/
+        - LD_LIBRARY_PATH=$TIBRV/lib
