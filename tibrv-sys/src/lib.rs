@@ -4,6 +4,15 @@
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
+impl From<bool> for tibrv_bool {
+    fn from(boolean: bool) -> Self {
+        match boolean {
+            true => tibrv_bool::TIBRV_TRUE,
+            false => tibrv_bool::TIBRV_FALSE,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -50,17 +59,10 @@ mod tests {
         let name = CString::new("message").unwrap();
         unsafe {
             let mut message: tibrvMsg = mem::zeroed();
-            tibok!(
-                tibrvMsg_Create(&mut message as *mut _),
-                tibrvMsg_AddStringEx(message,
-                                     name.as_ptr(),
-                                     text.as_ptr(),
-                                     0 as tibrv_u16));
+            tibok!(tibrvMsg_Create(&mut message as *mut _),
+                   tibrvMsg_AddStringEx(message, name.as_ptr(), text.as_ptr(), 0 as tibrv_u16));
             let mut returned_ptr: *const c_char = mem::zeroed();
-            tibok!(tibrvMsg_GetStringEx(message,
-                                        name.as_ptr(),
-                                        &mut returned_ptr,
-                                        0 as tibrv_u16));
+            tibok!(tibrvMsg_GetStringEx(message, name.as_ptr(), &mut returned_ptr, 0 as tibrv_u16));
             let slice = CStr::from_ptr(returned_ptr);
             assert_eq!("Hello World!", slice.to_str().unwrap());
         }
@@ -72,13 +74,8 @@ mod tests {
         let name = CString::new("message").unwrap();
         unsafe {
             let mut message: tibrvMsg = mem::zeroed();
-            tibok!(
-                tibrvMsg_Create(&mut message as *mut _),
-                tibrvMsg_AddStringEx(message,
-                                     name.as_ptr(),
-                                     text.as_ptr(),
-                                     0 as tibrv_u16)
-            );
+            tibok!(tibrvMsg_Create(&mut message as *mut _),
+                   tibrvMsg_AddStringEx(message, name.as_ptr(), text.as_ptr(), 0 as tibrv_u16));
             let mut returned_ptr: *const c_char = mem::zeroed();
             tibok!(tibrvMsg_ConvertToString(message, &mut returned_ptr));
             let slice = CStr::from_ptr(returned_ptr);

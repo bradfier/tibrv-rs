@@ -4,7 +4,7 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() {
-    // Location of the Tibco dependencies are defined by the TIBCO
+    // Location of the Tibco dependencies are defined by the TIBRV
     // environment variable.
     let tibrv = env::var("TIBRV").expect("TIBRV not defined.");
 
@@ -13,7 +13,7 @@ fn main() {
     println!("cargo:rustc-link-search=native={}/lib/", tibrv);
 
     let bindings = bindgen::Builder::default()
-        .unstable_rust(false)
+        .unstable_rust(true)
         .header("wrapper.h")
         .clang_arg(format!("-I{}/include/tibrv", tibrv))
         .generate()
