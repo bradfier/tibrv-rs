@@ -4,4 +4,5 @@ version = "0.1.0"
 authors = ["Richard Bradfield <bradfier@fstab.me>"]
 
 [dependencies]
+chrono = "0.4"
 tibrv-sys = { version = "0.1", path = "tibrv-sys" }

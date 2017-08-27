@@ -1,6 +1,7 @@
 use tibrv_sys::*;
 use std::os::raw::c_char;
 use std::ffi::{CString, CStr};
+use chrono::{DateTime, TimeZone};
 use std;
 
 pub struct TibRVMsgField {
@@ -9,15 +10,18 @@ pub struct TibRVMsgField {
 }
 
 pub trait Encodable {
-    fn tibrv_encode(&self, &str) -> TibRVMsgField;
+    fn tibrv_encode(&self, Option<&str>, Option<u32>) -> TibRVMsgField;
 }
 
 macro_rules! fixed_width_encodable {
-    ($base_type:ty, $tibrv_type:ty, $local_data:ident, $tibrv_flag:expr) => (
+    ($base_type:ty, $tibrv_type:ty, $local:ident, $tibrv_flag:expr) => (
         impl Encodable for $base_type {
-            fn tibrv_encode(&self, name: &str) -> TibRVMsgField {
-                let name_cstr = CString::new(name).unwrap();
-                let ptr = name_cstr.as_ptr();
+            fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
+                let name_cstr = CString::new(name.unwrap_or("")).unwrap();
+                let ptr = match name_cstr.to_bytes().len() {
+                    0 => std::ptr::null(),
+                    _ => name_cstr.as_ptr(),
+                };
 
                 TibRVMsgField {
                     name: name_cstr,
@@ -25,8 +29,8 @@ macro_rules! fixed_width_encodable {
                         name: ptr,
                         size: std::mem::size_of::<$base_type>() as tibrv_u32,
                         count: 1 as tibrv_u32,
-                        data: tibrvLocalData { $local_data: self.clone() as $tibrv_type },
-                        id: 0 as tibrv_u16,
+                        data: tibrvLocalData { $local: self.clone() as $tibrv_type },
+                        id: id.unwrap_or(0) as tibrv_u16,
                         type_: $tibrv_flag as tibrv_u8,
                     }
                 }
@@ -36,25 +40,49 @@ macro_rules! fixed_width_encodable {
 }
 
 macro_rules! from_encodable {
-    ($base_type:ty, $tibrv_type:tt, $tibrv_flag:expr) => (
+    ($base_type:ty, $tibrv_type:tt, $local:ident, $tibrv_flag:expr) => (
         impl Encodable for $base_type {
-            fn tibrv_encode(&self, name: &str) -> TibRVMsgField {
-                let name_cstr = CString::new(name).unwrap();
-                let ptr = name_cstr.as_ptr();
+            fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
+                let name_cstr = CString::new(name.unwrap_or("")).unwrap();
+                let ptr = match name_cstr.to_bytes().len() {
+                    0 => std::ptr::null(),
+                    _ => name_cstr.as_ptr(),
+                };
                 TibRVMsgField {
                     name: name_cstr,
                     inner: tibrvMsgField {
                         name: ptr,
                         size: std::mem::size_of::<$tibrv_type>() as tibrv_u32,
                         count: 1 as tibrv_u32,
-                        data: tibrvLocalData { boolean: $tibrv_type::from(self.clone()) },
-                        id: 0 as tibrv_u16,
+                        data: tibrvLocalData { $local: $tibrv_type::from(self.clone()) },
+                        id: id.unwrap_or(0) as tibrv_u16,
                         type_: $tibrv_flag as tibrv_u8,
                     }
                 }
             }
         }
     )
+}
+
+impl<Tz: TimeZone> Encodable for DateTime<Tz> {
+    fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
+        let name_cstr = CString::new(name.unwrap_or("")).unwrap();
+        let ptr = match name_cstr.to_bytes().len() {
+            0 => std::ptr::null(),
+            _ => name_cstr.as_ptr(),
+        };
+        TibRVMsgField {
+            name: name_cstr,
+            inner: tibrvMsgField {
+                name: ptr,
+                size: std::mem::size_of::<tibrvMsgDateTime>() as tibrv_u32,
+                count: 1 as tibrv_u32,
+                data: tibrvLocalData { date: tibrvMsgDateTime::from(self.clone()) },
+                id: id.unwrap_or(0) as tibrv_u16,
+                type_: TIBRVMSG_DATETIME as tibrv_u8,
+            },
+        }
+    }
 }
 
 // Integers
@@ -71,7 +99,7 @@ fixed_width_encodable!(i64, tibrv_i64, i64, TIBRVMSG_I64);
 fixed_width_encodable!(f32, tibrv_f32, f32, TIBRVMSG_F32);
 fixed_width_encodable!(f64, tibrv_f64, f64, TIBRVMSG_F64);
 
-from_encodable!(bool, tibrv_bool, TIBRVMSG_BOOL);
+from_encodable!(bool, tibrv_bool, boolean, TIBRVMSG_BOOL);
 
 #[cfg(test)]
 mod tests {

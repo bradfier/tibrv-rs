@@ -2,6 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
+extern crate chrono;
+
+use chrono::{DateTime, TimeZone};
+
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 impl From<bool> for tibrv_bool {
@@ -9,6 +13,15 @@ impl From<bool> for tibrv_bool {
         match boolean {
             true => tibrv_bool::TIBRV_TRUE,
             false => tibrv_bool::TIBRV_FALSE,
+        }
+    }
+}
+
+impl<Tz: TimeZone> From<DateTime<Tz>> for tibrvMsgDateTime {
+    fn from(dt: DateTime<Tz>) -> Self {
+        tibrvMsgDateTime {
+            sec: dt.timestamp() as tibrv_i64,
+            nsec: dt.timestamp_subsec_nanos() as tibrv_u32,
         }
     }
 }
