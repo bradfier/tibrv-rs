@@ -4,7 +4,7 @@
 
 extern crate chrono;
 
-use chrono::{NaiveDateTime, TimeZone, Utc};
+use chrono::NaiveDateTime;
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
@@ -13,6 +13,15 @@ impl From<bool> for tibrv_bool {
         match boolean {
             true => tibrv_bool::TIBRV_TRUE,
             false => tibrv_bool::TIBRV_FALSE,
+        }
+    }
+}
+
+impl From<tibrv_bool> for bool {
+    fn from(boolean: tibrv_bool) -> Self {
+        match boolean {
+            tibrv_bool::TIBRV_TRUE => true,
+            tibrv_bool::TIBRV_FALSE => false,
         }
     }
 }

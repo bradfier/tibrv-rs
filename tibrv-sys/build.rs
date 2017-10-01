@@ -13,7 +13,7 @@ fn main() {
     println!("cargo:rustc-link-search=native={}/lib/", tibrv);
 
     let bindings = bindgen::Builder::default()
-        .unstable_rust(true)
+        .rust_target(bindgen::RustTarget::Stable_1_19)
         .header("wrapper.h")
         .clang_arg(format!("-I{}/include/tibrv", tibrv))
         .generate()
