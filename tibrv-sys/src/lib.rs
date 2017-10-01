@@ -4,7 +4,7 @@
 
 extern crate chrono;
 
-use chrono::{DateTime, TimeZone};
+use chrono::{NaiveDateTime, TimeZone, Utc};
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
@@ -17,12 +17,18 @@ impl From<bool> for tibrv_bool {
     }
 }
 
-impl<Tz: TimeZone> From<DateTime<Tz>> for tibrvMsgDateTime {
-    fn from(dt: DateTime<Tz>) -> Self {
+impl From<NaiveDateTime> for tibrvMsgDateTime {
+    fn from(dt: NaiveDateTime) -> Self {
         tibrvMsgDateTime {
             sec: dt.timestamp() as tibrv_i64,
             nsec: dt.timestamp_subsec_nanos() as tibrv_u32,
         }
+    }
+}
+
+impl Into<NaiveDateTime> for tibrvMsgDateTime {
+    fn into(self) -> NaiveDateTime {
+        NaiveDateTime::from_timestamp(self.sec, self.nsec)
     }
 }
 
