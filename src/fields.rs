@@ -1,6 +1,7 @@
 use tibrv_sys::*;
 use std::ffi::CString;
 use chrono::NaiveDateTime;
+use std::net::Ipv4Addr;
 use std;
 
 pub struct TibRVMsgField {
@@ -12,7 +13,7 @@ pub trait Encodable {
     fn tibrv_encode(&self, Option<&str>, Option<u32>) -> TibRVMsgField;
 
     fn tibrv_try_decode(&TibRVMsgField) -> Option<Self>
-        where Self: std::marker::Sized;
+        where Self: Sized;
 }
 
 macro_rules! primitive_encodable {
@@ -101,6 +102,38 @@ primitive_encodable!(f64, tibrv_f64, f64, TIBRVMSG_F64);
 
 from_encodable!(bool, tibrv_bool, boolean, TIBRVMSG_BOOL);
 from_encodable!(NaiveDateTime, tibrvMsgDateTime, date, TIBRVMSG_DATETIME);
+from_encodable!(Ipv4Addr, tibrv_ipaddr32, ipaddr32, TIBRVMSG_IPADDR32);
+
+// Special cases for u16 IP port encoded in Network Byte Order
+fn tibrv_encode_port(port: &u16, name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
+    let name_cstr = CString::new(name.unwrap_or("")).unwrap();
+    let ptr = match name_cstr.to_bytes().len() {
+        0 => std::ptr::null(),
+        _ => name_cstr.as_ptr(),
+    };
+
+    TibRVMsgField {
+        name: name_cstr,
+        inner: tibrvMsgField {
+            name: ptr,
+            size: std::mem::size_of::<u16>() as tibrv_u32,
+            count: 1 as tibrv_u32,
+            data: tibrvLocalData { ipport16: port.to_be() },
+            id: id.unwrap_or(0) as tibrv_u16,
+            type_: TIBRVMSG_IPPORT16 as tibrv_u8,
+        }
+    }
+}
+
+fn tibrv_try_decode_port(msg: &TibRVMsgField) -> Option<u16> {
+    if msg.inner.type_ == TIBRVMSG_IPPORT16 as u8 {
+        let val = unsafe { msg.inner.data.ipport16 };
+        let decoded = u16::from_be(val);
+        Some(decoded)
+    } else {
+        None
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -151,6 +184,23 @@ mod tests {
         let dt = NaiveDate::from_ymd(2017, 01, 01).and_hms_milli(0, 0, 0, 0);
         let tibdate = dt.tibrv_encode(Some("Date"), None);
         assert_eq!(dt, NaiveDateTime::tibrv_try_decode(&tibdate).unwrap());
+    }
+
+    #[test]
+    fn test_ipaddr_encode() {
+        let addr = Ipv4Addr::new(127, 0, 0, 1);
+        let tibaddr = addr.tibrv_encode(Some("IP Address"), None);
+        assert_eq!(addr, Ipv4Addr::tibrv_try_decode(&tibaddr).unwrap());
+    }
+
+    #[test]
+    fn test_ipport_encode() {
+        let port = 1;
+        let tibport = tibrv_encode_port(&port, Some("Port"), None);
+        unsafe {
+            assert_eq!(256, tibport.inner.data.ipport16);
+        }
+        assert_eq!(port, tibrv_try_decode_port(&tibport).unwrap());
     }
 
     #[test]
