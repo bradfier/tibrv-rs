@@ -115,10 +115,13 @@ encodable!(f64, tibrv_f64, f64, TIBRVMSG_F64);
 array_encodable!(f32, TIBRVMSG_F32);
 array_encodable!(f64, TIBRVMSG_F64);
 
-// Types requiring conversion cannot be passed as raw slices
+// Custom types
 encodable!(bool, tibrv_bool, boolean, TIBRVMSG_BOOL);
 encodable!(NaiveDateTime, tibrvMsgDateTime, date, TIBRVMSG_DATETIME);
 encodable!(Ipv4Addr, tibrv_ipaddr32, ipaddr32, TIBRVMSG_IPADDR32);
+// Types requiring conversion cannot be passed as raw slices
+array_encodable!(tibrv_bool, TIBRVMSG_BOOL);
+array_encodable!(tibrvMsgDateTime, TIBRVMSG_DATETIME);
 
 // Special cases for u16 IP port encoded in Network Byte Order
 fn tibrv_encode_port(port: &u16, name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
