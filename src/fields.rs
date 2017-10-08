@@ -1,5 +1,5 @@
 use tibrv_sys::*;
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 use chrono::NaiveDateTime;
 use std::net::Ipv4Addr;
 use std::os::raw::c_void;
@@ -159,6 +159,39 @@ fn tibrv_try_decode_port(msg: &TibRVMsgField) -> Option<u16> {
     }
 }
 
+impl<'a> Encodable for &'a CStr {
+    fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
+        assert!(name.is_some() || id.is_some(), "At least one of id or name must be defined.");
+        let name_cstr = CString::new(name.unwrap_or("")).unwrap();
+        let ptr = match name_cstr.to_bytes().len() {
+            0 => std::ptr::null(),
+            _ => name_cstr.as_ptr(),
+        };
+        TibRVMsgField {
+            name: name_cstr,
+            inner: tibrvMsgField {
+                name: ptr,
+                size: self.to_bytes_with_nul().len() as tibrv_u32,
+                count: 1 as tibrv_u32,
+                data: tibrvLocalData { str: self.as_ptr() },
+                id: id.unwrap_or(0) as tibrv_u16,
+                type_: TIBRVMSG_STRING as tibrv_u8,
+            }
+        }
+
+    }
+
+    fn tibrv_try_decode(msg: &TibRVMsgField) -> Result<&'a CStr, &'static str> {
+        if msg.inner.type_ != TIBRVMSG_STRING as u8 {
+            Err("Mismatched message type flag")
+        } else {
+            let str_ptr = unsafe { msg.inner.data.str };
+            let c_str = unsafe { CStr::from_ptr(str_ptr) };
+            Ok(c_str)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -240,6 +273,21 @@ mod tests {
         assert_eq!(2, slice[1]);
         assert_eq!(3, slice[2]);
         assert_eq!(4, slice[3]);
+    }
+
+    #[test]
+    fn string_conversion() {
+        let name = "Name";
+        let sample_string = "Hello world!";
+        let other = CString::new(sample_string).unwrap();
+        let tib_string = other.as_ref().tibrv_encode(Some(name), None);
+
+        assert_eq!(sample_string.len() + 1, tib_string.inner.size as usize);
+        let decoded = <&CStr>::tibrv_try_decode(&tib_string)
+            .unwrap()
+            .to_str()
+            .unwrap();
+        assert_eq!(sample_string, decoded);
     }
 
     #[test]
