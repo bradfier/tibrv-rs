@@ -16,42 +16,7 @@ pub trait Encodable {
         where Self: Sized;
 }
 
-macro_rules! primitive_encodable {
-    ($base_type:ty, $tibrv_type:ty, $local:ident, $tibrv_flag:expr) => (
-        impl Encodable for $base_type {
-            fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
-                let name_cstr = CString::new(name.unwrap_or("")).unwrap();
-                let ptr = match name_cstr.to_bytes().len() {
-                    0 => std::ptr::null(),
-                    _ => name_cstr.as_ptr(),
-                };
-
-                TibRVMsgField {
-                    name: name_cstr,
-                    inner: tibrvMsgField {
-                        name: ptr,
-                        size: std::mem::size_of::<$base_type>() as tibrv_u32,
-                        count: 1 as tibrv_u32,
-                        data: tibrvLocalData { $local: self.clone() as $tibrv_type },
-                        id: id.unwrap_or(0) as tibrv_u16,
-                        type_: $tibrv_flag as tibrv_u8,
-                    }
-                }
-            }
-
-            fn tibrv_try_decode(msg: &TibRVMsgField) -> Option<$base_type> {
-                if msg.inner.type_ == $tibrv_flag as u8 {
-                    let val = unsafe { msg.inner.data.$local as $base_type };
-                    Some(val.clone())
-                } else {
-                    None
-                }
-            }
-        }
-    )
-}
-
-macro_rules! from_encodable {
+macro_rules! encodable {
     ($base_type:ty, $tibrv_type:tt, $local:ident, $tibrv_flag:expr) => (
         impl Encodable for $base_type {
             fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
@@ -87,22 +52,22 @@ macro_rules! from_encodable {
 }
 
 // Integers
-primitive_encodable!(u8, tibrv_u8, u8, TIBRVMSG_U8);
-primitive_encodable!(i8, tibrv_i8, i8, TIBRVMSG_I8);
-primitive_encodable!(u16, tibrv_u16, u16, TIBRVMSG_U16);
-primitive_encodable!(i16, tibrv_i16, i16, TIBRVMSG_I16);
-primitive_encodable!(u32, tibrv_u32, u32, TIBRVMSG_U32);
-primitive_encodable!(i32, tibrv_i32, i32, TIBRVMSG_I32);
-primitive_encodable!(u64, tibrv_u64, u64, TIBRVMSG_U64);
-primitive_encodable!(i64, tibrv_i64, i64, TIBRVMSG_I64);
+encodable!(u8, tibrv_u8, u8, TIBRVMSG_U8);
+encodable!(i8, tibrv_i8, i8, TIBRVMSG_I8);
+encodable!(u16, tibrv_u16, u16, TIBRVMSG_U16);
+encodable!(i16, tibrv_i16, i16, TIBRVMSG_I16);
+encodable!(u32, tibrv_u32, u32, TIBRVMSG_U32);
+encodable!(i32, tibrv_i32, i32, TIBRVMSG_I32);
+encodable!(u64, tibrv_u64, u64, TIBRVMSG_U64);
+encodable!(i64, tibrv_i64, i64, TIBRVMSG_I64);
 
 // Floating point
-primitive_encodable!(f32, tibrv_f32, f32, TIBRVMSG_F32);
-primitive_encodable!(f64, tibrv_f64, f64, TIBRVMSG_F64);
+encodable!(f32, tibrv_f32, f32, TIBRVMSG_F32);
+encodable!(f64, tibrv_f64, f64, TIBRVMSG_F64);
 
-from_encodable!(bool, tibrv_bool, boolean, TIBRVMSG_BOOL);
-from_encodable!(NaiveDateTime, tibrvMsgDateTime, date, TIBRVMSG_DATETIME);
-from_encodable!(Ipv4Addr, tibrv_ipaddr32, ipaddr32, TIBRVMSG_IPADDR32);
+encodable!(bool, tibrv_bool, boolean, TIBRVMSG_BOOL);
+encodable!(NaiveDateTime, tibrvMsgDateTime, date, TIBRVMSG_DATETIME);
+encodable!(Ipv4Addr, tibrv_ipaddr32, ipaddr32, TIBRVMSG_IPADDR32);
 
 // Special cases for u16 IP port encoded in Network Byte Order
 fn tibrv_encode_port(port: &u16, name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
