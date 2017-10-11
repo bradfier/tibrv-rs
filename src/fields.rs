@@ -1,3 +1,5 @@
+//! Interfaces for constructing Rendezvous Message Fields
+
 use tibrv_sys::*;
 use std::ffi::{CStr, CString};
 use chrono::NaiveDateTime;
@@ -5,15 +7,54 @@ use std::net::Ipv4Addr;
 use std::os::raw::c_void;
 use std;
 
+/// A structure wrapping a `tibrvMsgField`
 pub struct TibRVMsgField {
     pub name: CString,
     pub inner: tibrvMsgField,
 }
 
+/// Trait indicating the type may be encoded into a message field.
+///
+/// Implementations are provided for all the scalar data types supported
+/// by Rendezvous, these scalar types may in turn also be encoded as native
+/// arrays.
+///
+/// Also supported are strings (as `&CStr`), IPv4 Addresses (`std::net::Ipv4Addr`)
+/// and date/time, using `NaiveDateTime` from the `chrono` crate.
+///
+/// ### Example
+///
+/// ```
+/// use tibrv::fields::Encodable;
+///
+/// let array: &[u8] = &[1, 2, 3, 4];
+///
+/// // Encoding
+/// let msg = array.tibrv_encode(Some("Array"), None);
+/// assert_eq!(1, msg.inner.size);
+/// assert_eq!(4, msg.inner.count);
+///
+/// // Decoding
+/// let slice = <&[u8]>::tibrv_try_decode(&msg).unwrap();
+/// assert_eq!([1, 2, 3, 4], slice);
+/// ```
 pub trait Encodable {
-    fn tibrv_encode(&self, Option<&str>, Option<u32>) -> TibRVMsgField;
+    /// Encodes this variable as a message field.
+    ///
+    /// Scalar types will be copied, but all vector types will be
+    /// passed as pointers to the underlying C struct, so the source variable
+    /// must live until the message field is added to a TibRVMsg
+    ///
+    /// ### Arguments
+    /// At least one of `name` or `id` must be `Some()`
+    fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> TibRVMsgField;
 
-    fn tibrv_try_decode(&TibRVMsgField) -> Result<Self, &'static str> where Self: Sized;
+    /// Try and decode a supplied `TibRVMsgField` as this type.
+    ///
+    /// Rendezvous message fields include some primitive type information,
+    /// but this method may fail if the sending party incorrectly encodes
+    /// the data fields.
+    fn tibrv_try_decode(msg: &TibRVMsgField) -> Result<Self, &'static str> where Self: Sized;
 }
 
 macro_rules! encodable {
@@ -90,6 +131,39 @@ macro_rules! array_encodable {
     )
 }
 
+impl<'a> Encodable for &'a CStr {
+    fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
+        assert!(name.is_some() || id.is_some(),
+                "At least one of id or name must be defined.");
+        let name_cstr = CString::new(name.unwrap_or("")).unwrap();
+        let ptr = match name_cstr.to_bytes().len() {
+            0 => std::ptr::null(),
+            _ => name_cstr.as_ptr(),
+        };
+        TibRVMsgField {
+            name: name_cstr,
+            inner: tibrvMsgField {
+                name: ptr,
+                size: self.to_bytes_with_nul().len() as tibrv_u32,
+                count: 1 as tibrv_u32,
+                data: tibrvLocalData { str: self.as_ptr() },
+                id: id.unwrap_or(0) as tibrv_u16,
+                type_: TIBRVMSG_STRING as tibrv_u8,
+            },
+        }
+    }
+
+    fn tibrv_try_decode(msg: &TibRVMsgField) -> Result<&'a CStr, &'static str> {
+        if msg.inner.type_ != TIBRVMSG_STRING as u8 {
+            Err("Mismatched message type flag")
+        } else {
+            let str_ptr = unsafe { msg.inner.data.str };
+            let c_str = unsafe { CStr::from_ptr(str_ptr) };
+            Ok(c_str)
+        }
+    }
+}
+
 // Integers
 encodable!(u8, tibrv_u8, u8, TIBRVMSG_U8);
 encodable!(i8, tibrv_i8, i8, TIBRVMSG_I8);
@@ -123,8 +197,15 @@ encodable!(Ipv4Addr, tibrv_ipaddr32, ipaddr32, TIBRVMSG_IPADDR32);
 array_encodable!(tibrv_bool, TIBRVMSG_BOOL);
 array_encodable!(tibrvMsgDateTime, TIBRVMSG_DATETIME);
 
-// Special cases for u16 IP port encoded in Network Byte Order
-fn tibrv_encode_port(port: &u16, name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
+/// Encode a `u16` as an IP Port message field.
+///
+/// Rendezvous has special provisions for network data types,
+/// IPv4 Addresses and IP Ports are encoded as special types using
+/// Network Byte Ordering.
+///
+/// Since we already provide an Impl for 'normal' `u16` this function will
+/// encode using the special byte ordering.
+pub fn tibrv_encode_port(port: &u16, name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
     assert!(name.is_some() || id.is_some(),
             "At least one of id or name must be defined.");
     let name_cstr = CString::new(name.unwrap_or("")).unwrap();
@@ -146,49 +227,56 @@ fn tibrv_encode_port(port: &u16, name: Option<&str>, id: Option<u32>) -> TibRVMs
     }
 }
 
-fn tibrv_try_decode_port(msg: &TibRVMsgField) -> Option<u16> {
+/// Try and decode an IP Port message field.
+pub fn tibrv_try_decode_port(msg: &TibRVMsgField) -> Result<u16, &'static str> {
     if msg.inner.count > 1 {
         panic!("Attempt to decode array TibRVMsgField as Scalar");
     }
     if msg.inner.type_ == TIBRVMSG_IPPORT16 as u8 {
         let val = unsafe { msg.inner.data.ipport16 };
         let decoded = u16::from_be(val);
-        Some(decoded)
+        Ok(decoded)
     } else {
-        None
+        Err("Mismatched message type flag")
     }
 }
 
-impl<'a> Encodable for &'a CStr {
-    fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
-        assert!(name.is_some() || id.is_some(), "At least one of id or name must be defined.");
-        let name_cstr = CString::new(name.unwrap_or("")).unwrap();
-        let ptr = match name_cstr.to_bytes().len() {
-            0 => std::ptr::null(),
-            _ => name_cstr.as_ptr(),
-        };
-        TibRVMsgField {
-            name: name_cstr,
-            inner: tibrvMsgField {
-                name: ptr,
-                size: self.to_bytes_with_nul().len() as tibrv_u32,
-                count: 1 as tibrv_u32,
-                data: tibrvLocalData { str: self.as_ptr() },
-                id: id.unwrap_or(0) as tibrv_u16,
-                type_: TIBRVMSG_STRING as tibrv_u8,
-            }
-        }
-
+/// Encode a slice as an opaque byte sequence.
+pub unsafe fn tibrv_encode_opaque<'a, T: Copy>(slice: &'a [T], name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
+    assert!(name.is_some() || id.is_some(),
+            "At least one of id or name must be defined.");
+    let name_cstr = CString::new(name.unwrap_or("")).unwrap();
+    let ptr = match name_cstr.to_bytes().len() {
+        0 => std::ptr::null(),
+        _ => name_cstr.as_ptr(),
+    };
+    TibRVMsgField {
+        name: name_cstr,
+        inner: tibrvMsgField {
+            name: ptr,
+            size: std::mem::size_of_val(&slice) as tibrv_u32,
+            count: 1 as tibrv_u32,
+            data: tibrvLocalData { buf: slice.as_ptr() as *const c_void },
+            id: id.unwrap_or(0) as tibrv_u16,
+            type_: TIBRVMSG_OPAQUE as tibrv_u8,
+        },
     }
+}
 
-    fn tibrv_try_decode(msg: &TibRVMsgField) -> Result<&'a CStr, &'static str> {
-        if msg.inner.type_ != TIBRVMSG_STRING as u8 {
-            Err("Mismatched message type flag")
-        } else {
-            let str_ptr = unsafe { msg.inner.data.str };
-            let c_str = unsafe { CStr::from_ptr(str_ptr) };
-            Ok(c_str)
-        }
+/// Try and decode an opaque byte sequence into a slice
+///
+/// When using Rendezvous opaque byte sequences, all type information
+/// is lost (internally the slice is passed as `void*`).
+/// Therefore this function is approximately as unsafe as `std::mem::transmute`,
+/// except without the soft and fluffy blanket of size checking.
+pub unsafe fn tibrv_try_decode_opaque<T: Copy>(msg: &TibRVMsgField) -> Result<&[T], &'static str> {
+    if msg.inner.type_ != TIBRVMSG_OPAQUE as u8 {
+        Err("Mismatched message type flag")
+    } else {
+        assert!(!msg.inner.data.buf.is_null());
+        // `size` in from_raw_parts is helpfully in 'elements' not bytes...
+        let elements: usize = msg.inner.size as usize / std::mem::size_of::<T>();
+        Ok(std::slice::from_raw_parts(msg.inner.data.buf as *const T, elements))
     }
 }
 
