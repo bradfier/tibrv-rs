@@ -16,4 +16,4 @@ path = "src/lib.rs"
 chrono = "0.4"
 
 [build-dependencies]
-bindgen = "*"
+bindgen = "0.30"
