@@ -1,7 +1,21 @@
 [package]
 name = "tibrv"
-version = "0.1.0"
+version = "0.0.0"
 authors = ["Richard Bradfield <bradfier@fstab.me>"]
+license = "MIT/Apache-2.0"
+readme = "README.md"
+keywords = ["tibrv", "messaging"]
+repository = "https://github.com/bradfier/tibrv-rs"
+homepage = "https://github.com/bradfier/tibrv-rs"
+documentation = "https://docs.rs/tibrv"
+description = """
+Bindings to the C library provided by TIBCO Rendezvous, a "high performance
+message oriented middleware" commonly used in the financial industry.
+"""
+categories = ["api-bindings"]
+
+[badges]
+travis-ci = { repository = "bradfier/tibrv-rs" }
 
 [dependencies]
 chrono = "0.4"

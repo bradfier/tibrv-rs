@@ -2,6 +2,15 @@
 name = "tibrv-sys"
 version = "0.1.0"
 authors = ["Richard Bradfield <bradfier@fstab.me>"]
+links = "tibrv"
+build = "build.rs"
+repository = "https://github.com/bradfier/tibrv-rs"
+license = "MIT/Apache-2.0"
+description = "Native bindings to the TIBCO Rendezvous C library."
+
+[lib]
+name = "tibrv_sys"
+path = "src/lib.rs"
 
 [dependencies]
 chrono = "0.4"
