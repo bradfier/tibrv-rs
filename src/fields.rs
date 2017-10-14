@@ -8,9 +8,41 @@ use std::os::raw::c_void;
 use std;
 
 /// A structure wrapping a `tibrvMsgField`
-pub struct TibRVMsgField {
+pub struct MsgField {
     pub name: CString,
     pub inner: tibrvMsgField,
+}
+
+pub struct MsgFieldBuilder<'a, T: 'a>
+    where T: Encodable {
+    name: Option<&'a str>,
+    id: Option<u32>,
+    data: &'a T
+}
+
+impl<'a, T> MsgFieldBuilder<'a, T>
+    where T: Encodable {
+    pub fn new(data: &'a T) -> MsgFieldBuilder<'a, T> {
+        MsgFieldBuilder {
+            name: None,
+            id: None,
+            data: data
+        }
+    }
+
+    pub fn with_name(mut self, name: &'a str) -> MsgFieldBuilder<T> {
+        self.name = Some(name);
+        self
+    }
+
+    pub fn with_id(mut self, id: u32) -> MsgFieldBuilder<'a, T> {
+        self.id = Some(id);
+        self
+    }
+
+    pub fn encode(self) -> MsgField {
+        self.data.tibrv_encode(self.name, self.id)
+    }
 }
 
 /// Trait indicating the type may be encoded into a message field.
@@ -47,27 +79,27 @@ pub trait Encodable {
     ///
     /// ### Arguments
     /// At least one of `name` or `id` must be `Some()`
-    fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> TibRVMsgField;
+    fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> MsgField;
 
-    /// Try and decode a supplied `TibRVMsgField` as this type.
+    /// Try and decode a supplied `MsgField` as this type.
     ///
     /// Rendezvous message fields include some primitive type information,
     /// but this method may fail if the sending party incorrectly encodes
     /// the data fields.
-    fn tibrv_try_decode(msg: &TibRVMsgField) -> Result<Self, &'static str> where Self: Sized;
+    fn tibrv_try_decode(msg: &MsgField) -> Result<Self, &'static str> where Self: Sized;
 }
 
 macro_rules! encodable {
     ($base_type:ty, $tibrv_type:tt, $local:ident, $tibrv_flag:expr) => (
         impl Encodable for $base_type {
-            fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
+            fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> MsgField {
                 assert!(name.is_some() || id.is_some(), "At least one of id or name must be defined.");
                 let name_cstr = CString::new(name.unwrap_or("")).unwrap();
                 let ptr = match name_cstr.to_bytes().len() {
                     0 => std::ptr::null(),
                     _ => name_cstr.as_ptr(),
                 };
-                TibRVMsgField {
+                MsgField {
                     name: name_cstr,
                     inner: tibrvMsgField {
                         name: ptr,
@@ -80,8 +112,8 @@ macro_rules! encodable {
                 }
             }
 
-            fn tibrv_try_decode(msg: &TibRVMsgField) -> Result<$base_type, &'static str> {
-                if msg.inner.count > 1 { return Err("Attempt to decode array TibRVMsgField as Scalar") };
+            fn tibrv_try_decode(msg: &MsgField) -> Result<$base_type, &'static str> {
+                if msg.inner.count > 1 { return Err("Attempt to decode array MsgField as Scalar") };
                 if msg.inner.type_ == $tibrv_flag as u8 {
                     let val = unsafe { msg.inner.data.$local };
                     let decoded: $base_type = val.into();
@@ -97,14 +129,14 @@ macro_rules! encodable {
 macro_rules! array_encodable {
     ($base_type:ty, $tibrv_flag:expr) => (
         impl<'a> Encodable for &'a [$base_type] {
-            fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
+            fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> MsgField {
                 assert!(name.is_some() || id.is_some(), "At least one of id or name must be defined.");
                 let name_cstr = CString::new(name.unwrap_or("")).unwrap();
                 let ptr = match name_cstr.to_bytes().len() {
                     0 => std::ptr::null(),
                     _ => name_cstr.as_ptr(),
                 };
-                TibRVMsgField {
+                MsgField {
                     name: name_cstr,
                     inner: tibrvMsgField {
                         name: ptr,
@@ -117,7 +149,7 @@ macro_rules! array_encodable {
                 }
             }
 
-            fn tibrv_try_decode(msg: &TibRVMsgField) -> Result<&'a [$base_type], &'static str> {
+            fn tibrv_try_decode(msg: &MsgField) -> Result<&'a [$base_type], &'static str> {
                 if msg.inner.type_ != $tibrv_flag as u8 {
                     Err("Mismatched message type flag")
                 } else {
@@ -132,7 +164,7 @@ macro_rules! array_encodable {
 }
 
 impl<'a> Encodable for &'a CStr {
-    fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
+    fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> MsgField {
         assert!(name.is_some() || id.is_some(),
                 "At least one of id or name must be defined.");
         let name_cstr = CString::new(name.unwrap_or("")).unwrap();
@@ -140,7 +172,7 @@ impl<'a> Encodable for &'a CStr {
             0 => std::ptr::null(),
             _ => name_cstr.as_ptr(),
         };
-        TibRVMsgField {
+        MsgField {
             name: name_cstr,
             inner: tibrvMsgField {
                 name: ptr,
@@ -153,7 +185,7 @@ impl<'a> Encodable for &'a CStr {
         }
     }
 
-    fn tibrv_try_decode(msg: &TibRVMsgField) -> Result<&'a CStr, &'static str> {
+    fn tibrv_try_decode(msg: &MsgField) -> Result<&'a CStr, &'static str> {
         if msg.inner.type_ != TIBRVMSG_STRING as u8 {
             Err("Mismatched message type flag")
         } else {
@@ -205,7 +237,7 @@ array_encodable!(tibrvMsgDateTime, TIBRVMSG_DATETIME);
 ///
 /// Since we already provide an Impl for 'normal' `u16` this function will
 /// encode using the special byte ordering.
-pub fn tibrv_encode_port(port: &u16, name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
+pub fn tibrv_encode_port(port: &u16, name: Option<&str>, id: Option<u32>) -> MsgField {
     assert!(name.is_some() || id.is_some(),
             "At least one of id or name must be defined.");
     let name_cstr = CString::new(name.unwrap_or("")).unwrap();
@@ -214,7 +246,7 @@ pub fn tibrv_encode_port(port: &u16, name: Option<&str>, id: Option<u32>) -> Tib
         _ => name_cstr.as_ptr(),
     };
 
-    TibRVMsgField {
+    MsgField {
         name: name_cstr,
         inner: tibrvMsgField {
             name: ptr,
@@ -228,9 +260,9 @@ pub fn tibrv_encode_port(port: &u16, name: Option<&str>, id: Option<u32>) -> Tib
 }
 
 /// Try and decode an IP Port message field.
-pub fn tibrv_try_decode_port(msg: &TibRVMsgField) -> Result<u16, &'static str> {
+pub fn tibrv_try_decode_port(msg: &MsgField) -> Result<u16, &'static str> {
     if msg.inner.count > 1 {
-        panic!("Attempt to decode array TibRVMsgField as Scalar");
+        panic!("Attempt to decode array MsgField as Scalar");
     }
     if msg.inner.type_ == TIBRVMSG_IPPORT16 as u8 {
         let val = unsafe { msg.inner.data.ipport16 };
@@ -242,7 +274,7 @@ pub fn tibrv_try_decode_port(msg: &TibRVMsgField) -> Result<u16, &'static str> {
 }
 
 /// Encode a slice as an opaque byte sequence.
-pub unsafe fn tibrv_encode_opaque<'a, T: Copy>(slice: &'a [T], name: Option<&str>, id: Option<u32>) -> TibRVMsgField {
+pub unsafe fn tibrv_encode_opaque<'a, T: Copy>(slice: &'a [T], name: Option<&str>, id: Option<u32>) -> MsgField {
     assert!(name.is_some() || id.is_some(),
             "At least one of id or name must be defined.");
     let name_cstr = CString::new(name.unwrap_or("")).unwrap();
@@ -250,7 +282,7 @@ pub unsafe fn tibrv_encode_opaque<'a, T: Copy>(slice: &'a [T], name: Option<&str
         0 => std::ptr::null(),
         _ => name_cstr.as_ptr(),
     };
-    TibRVMsgField {
+    MsgField {
         name: name_cstr,
         inner: tibrvMsgField {
             name: ptr,
@@ -269,7 +301,7 @@ pub unsafe fn tibrv_encode_opaque<'a, T: Copy>(slice: &'a [T], name: Option<&str
 /// is lost (internally the slice is passed as `void*`).
 /// Therefore this function is approximately as unsafe as `std::mem::transmute`,
 /// except without the soft and fluffy blanket of size checking.
-pub unsafe fn tibrv_try_decode_opaque<T: Copy>(msg: &TibRVMsgField) -> Result<&[T], &'static str> {
+pub unsafe fn tibrv_try_decode_opaque<T: Copy>(msg: &MsgField) -> Result<&[T], &'static str> {
     if msg.inner.type_ != TIBRVMSG_OPAQUE as u8 {
         Err("Mismatched message type flag")
     } else {
@@ -376,6 +408,17 @@ mod tests {
             .to_str()
             .unwrap();
         assert_eq!(sample_string, decoded);
+    }
+
+    #[test]
+    fn builder() {
+        let data: &[u64] = &[1, 2, 3, 4, 5];
+        let field = MsgFieldBuilder::new(&data)
+            .with_name("Name")
+            .with_id(4)
+            .encode();
+        assert_eq!(8, field.inner.size);
+        assert_eq!(5, field.inner.count);
     }
 
     #[test]
