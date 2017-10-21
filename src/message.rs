@@ -14,7 +14,7 @@ use std::ffi::CString;
 /// `tibrvMsg_Destroy` will be run to free any memory allocated
 /// to store the message.
 pub struct Msg {
-    pub inner: tibrvMsg,
+    pub(crate) inner: tibrvMsg,
 }
 
 impl Msg {
@@ -183,6 +183,21 @@ impl Msg {
             _ => Err("Bork!"),
         }
     }
+
+    /// Set the send subject for the message.
+    ///
+    /// No wildcards are permitted in sender subjects.
+    pub fn set_send_subject(&mut self, subject: &str)
+        -> Result<(), &'static str> {
+        let subject_c = CString::new(subject).map_err(|_| "Bork!")?;
+        let result = unsafe {
+            tibrvMsg_SetSendSubject(self.inner, subject_c.as_ptr())
+        };
+        match result {
+            tibrv_status::TIBRV_OK => Ok(()),
+            _ => Err("Bork!"),
+        }
+    }
 }
 
 // Ensure we clean up messages we're responsible for.
@@ -202,7 +217,7 @@ impl Drop for Msg {
 /// the responsibility of the Rendezvous C library, and will not be
 /// freed when the `BorrowedMsg` is dropped.
 pub struct BorrowedMsg {
-    pub inner: tibrvMsg,
+    pub(crate) inner: tibrvMsg,
 }
 
 impl BorrowedMsg {

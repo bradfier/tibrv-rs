@@ -25,8 +25,8 @@ pub struct MsgField {
 /// which take `&MsgField` (i.e the 'decode' methods) can be used
 /// transparently.
 pub struct BorrowedMsgField<'a> {
-    pub inner: MsgField,
-    pub phantom: PhantomData<&'a Msg>,
+    pub(crate) inner: MsgField,
+    pub(crate) phantom: PhantomData<&'a Msg>,
 }
 
 impl<'a> Deref for BorrowedMsgField<'a> {
