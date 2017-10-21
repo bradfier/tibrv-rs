@@ -8,6 +8,20 @@ install:
     - curl -O $TIBCO_SOURCE
     - tar -xf tibco.tar.gz
 
+before_script:
+    - |
+        pip install 'travis-cargo<0.2' --user &&
+        export PATH=$HOME/.local/bin:$PATH
+
+script:
+    - |
+        travis-cargo build &&
+        travis-cargo test &&
+        travis-cargo --only stable doc
+
+after_success:
+    - travis-cargo --only stable doc-upload
+
 env:
     global:
         - TIBRV=$TRAVIS_BUILD_DIR/tibco/
