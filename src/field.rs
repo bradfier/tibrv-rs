@@ -18,7 +18,7 @@ pub struct MsgField {
 
 /// A structure wrapping a `MsgField`
 ///
-/// `BorrowedMsgField` encodes the lifetime that an extracted MsgField
+/// `BorrowedMsgField` encodes the lifetime that an extracted `MsgField`
 /// inherits from its parent `Msg`, using `std::marker::PhantomData`.
 ///
 /// This type implements `Deref<Target = MsgField>`, so any methods
@@ -142,10 +142,7 @@ macro_rules! encodable {
             fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> MsgField {
                 some_ident!(name, id);
                 let name_cstr = CString::new(name.unwrap_or("")).unwrap();
-                let ptr = match name_cstr.to_bytes().len() {
-                    0 => std::ptr::null(),
-                    _ => name_cstr.as_ptr(),
-                };
+                let ptr = name.map_or(std::ptr::null(), |_| name_cstr.as_ptr());
                 MsgField {
                     name: name_cstr,
                     inner: tibrvMsgField {
@@ -181,10 +178,7 @@ macro_rules! array_encodable {
             fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> MsgField {
                 some_ident!(name, id);
                 let name_cstr = CString::new(name.unwrap_or("")).unwrap();
-                let ptr = match name_cstr.to_bytes().len() {
-                    0 => std::ptr::null(),
-                    _ => name_cstr.as_ptr(),
-                };
+                let ptr = name.map_or(std::ptr::null(), |_| name_cstr.as_ptr());
                 MsgField {
                     name: name_cstr,
                     inner: tibrvMsgField {
@@ -218,10 +212,7 @@ impl<'a> Encodable for &'a CStr {
     fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> MsgField {
         some_ident!(name, id);
         let name_cstr = CString::new(name.unwrap_or("")).unwrap();
-        let ptr = match name_cstr.to_bytes().len() {
-            0 => std::ptr::null(),
-            _ => name_cstr.as_ptr(),
-        };
+        let ptr = name.map_or(std::ptr::null(), |_| name_cstr.as_ptr());
         MsgField {
             name: name_cstr,
             inner: tibrvMsgField {
@@ -253,10 +244,7 @@ impl<'a> Encodable for &'a Msg {
     fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> MsgField {
         some_ident!(name, id);
         let name_cstr = CString::new(name.unwrap_or("")).unwrap();
-        let ptr = match name_cstr.to_bytes().len() {
-            0 => std::ptr::null(),
-            _ => name_cstr.as_ptr(),
-        };
+        let ptr = name.map_or(std::ptr::null(), |_| name_cstr.as_ptr());
         MsgField {
             name: name_cstr,
             inner: tibrvMsgField {
@@ -327,10 +315,7 @@ pub fn tibrv_encode_port(port: &u16,
                          -> MsgField {
     some_ident!(name, id);
     let name_cstr = CString::new(name.unwrap_or("")).unwrap();
-    let ptr = match name_cstr.to_bytes().len() {
-        0 => std::ptr::null(),
-        _ => name_cstr.as_ptr(),
-    };
+    let ptr = name.map_or(std::ptr::null(), |_| name_cstr.as_ptr());
 
     MsgField {
         name: name_cstr,
@@ -366,10 +351,7 @@ pub unsafe fn tibrv_encode_opaque<'a, T: Copy>(slice: &'a [T],
                                                -> MsgField {
     some_ident!(name, id);
     let name_cstr = CString::new(name.unwrap_or("")).unwrap();
-    let ptr = match name_cstr.to_bytes().len() {
-        0 => std::ptr::null(),
-        _ => name_cstr.as_ptr(),
-    };
+    let ptr = name.map_or(std::ptr::null(), |_| name_cstr.as_ptr());
     MsgField {
         name: name_cstr,
         inner: tibrvMsgField {

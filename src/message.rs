@@ -85,7 +85,7 @@ impl Msg {
                      name: Option<&str>,
                      id: Option<u32>)
                      -> Result<BorrowedMsgField<'a>, &'static str> {
-        assert!(name.is_some() != id.is_some(),
+        assert_ne!(name.is_some(), id.is_some(),
                 "One of id or name must be provided.");
         let mut field: tibrvMsgField = unsafe { mem::zeroed() };
         let field_name = CString::new(name.unwrap_or("")).unwrap();
@@ -136,8 +136,8 @@ impl Msg {
                     name: Option<&str>,
                     id: Option<u32>)
                     -> Result<(), &'static str> {
-        assert!(name.is_some() != id.is_some(),
-                "One of id or name must be provided.");
+        assert_ne!(name.is_some(), id.is_some(),
+                   "One of id or name must be provided.");
         let field_name = CString::new(name.unwrap_or("")).unwrap();
         let name_ptr = name.map_or(std::ptr::null(), |_| field_name.as_ptr());
         let result = unsafe {
