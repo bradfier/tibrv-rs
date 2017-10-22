@@ -148,6 +148,7 @@ mod tests {
         assert_eq!(0, queue.unwrap().count().unwrap());
     }
 
+    #[ignore] // Requires a running rvd
     #[test]
     fn subscribe() {
         let ctx = RvCtx::new().unwrap();
