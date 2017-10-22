@@ -8,6 +8,11 @@ use context::{RvCtx, Transport};
 use message::{Msg, BorrowedMsg};
 use std::marker::PhantomData;
 
+/// Struct representing a Rendezvous event queue.
+///
+/// Represents a queue of events waiting for dispatch, at present
+/// only message queues are implemented, although the library supports
+/// IO (socket) events and arbitrary timers as well.
 pub struct Queue<'a> {
     inner: tibrvQueue,
     phantom: PhantomData<&'a RvCtx>,
@@ -27,6 +32,7 @@ impl<'a> Queue<'a> {
         }
     }
 
+    /// Get the number of events waiting in the queue.
     pub fn count(&self) -> Result<u32, &'static str> {
         let mut ptr: u32 = 0;
         match unsafe { tibrvQueue_GetCount(self.inner, &mut ptr) } {
@@ -39,9 +45,9 @@ impl<'a> Queue<'a> {
                                        message: tibrvMsg,
                                        closure: *mut ::std::os::raw::c_void)
         -> () {
-        // We can panic if the channel has been closed, but we have
-        // no mechanism by which to report this via Rendezvous, therefore
-        // if the .send() method fails, we just ignore it.
+        // If anything goes wrong in this callback, we have no
+        // way to indicate that to Rendezvous without causing an abort.
+        // Instead we catch any recoverable unwind.
         let _ =::std::panic::catch_unwind(move || {
             let sender: Box<mpsc::Sender<Msg>> =
                 Box::from_raw(closure as *mut mpsc::Sender<Msg>);
@@ -50,8 +56,17 @@ impl<'a> Queue<'a> {
         });
     }
 
+    /// Subscribe to a message subject.
+    ///
+    /// Sets up the callback to copy messages from the event
+    /// queue into a `mpsc::channel` for consumption from Rust.
+    ///
+    /// Requires a reference to a valid `Transport` on which to listen.
+    ///
+    /// Subject must be valid ASCII, wildcards are accepted, although
+    /// a wildcard-only subject is not.
     pub fn subscribe(&self, tp: &Transport, subject: &str)
-        -> Result<mpsc::Receiver<Msg>, &'static str>  {
+        -> Result<Subscription, &'static str>  {
             let (send, recv) = mpsc::channel();
             let subject_c = CString::new(subject).map_err(|_| "Bork!")?;
             let mut ptr: tibrvEvent = unsafe { mem::zeroed() };
@@ -69,22 +84,54 @@ impl<'a> Queue<'a> {
             if result != tibrv_status::TIBRV_OK {
                 return Err("Bork!");
             };
-            Ok(recv)
+            Ok(Subscription { event: ptr, queue: self, channel: recv })
     }
 
-    // Blocking dispatch
-    pub fn dispatch(&self) -> Result<(), &'static str> {
-        match unsafe { tibrvQueue_TimedDispatch(self.inner, -1.0) } {
-            tibrv_status::TIBRV_OK => Ok(()),
-            _ => Err("Bork!"),
-        }
-    }
 }
 
 impl<'a> Drop for Queue<'a> {
     fn drop(&mut self) {
         unsafe {
             tibrvQueue_DestroyEx(self.inner, None, ::std::ptr::null());
+        }
+    }
+}
+
+/// Represents a subscription to a subject.
+///
+/// Wraps the event, the event queue, and the `mpsc::Receiver`
+/// containing the `Msg` data.
+pub struct Subscription<'a> {
+    event: tibrvEvent,
+    queue: &'a Queue<'a>,
+    channel: mpsc::Receiver<Msg>,
+}
+
+impl<'a> Subscription<'a> {
+    // Blocking dispatch
+    fn dispatch(&self) -> Result<(), &'static str> {
+        match unsafe { tibrvQueue_TimedDispatch(self.queue.inner, -1.0) } {
+            tibrv_status::TIBRV_OK => Ok(()),
+            _ => Err("Bork!"),
+        }
+    }
+
+    /// Get the next message available on this subscription.
+    ///
+    /// Blocks until a message is available in the queue.
+    pub fn next(&self) -> Result<Msg, &'static str> {
+        self.dispatch()?;
+        self.channel.recv().map_err(|_| "Bork!")
+    }
+}
+
+impl<'a> Drop for Subscription<'a> {
+    fn drop(&mut self) {
+        unsafe {
+            tibrvEvent_DestroyEx(
+                self.event,
+                None
+            );
         }
     }
 }
@@ -99,5 +146,14 @@ mod tests {
         let queue = ctx.queue();
         assert!(queue.is_ok());
         assert_eq!(0, queue.unwrap().count().unwrap());
+    }
+
+    #[test]
+    fn subscribe() {
+        let ctx = RvCtx::new().unwrap();
+        let queue = ctx.queue().unwrap();
+        let tp = ctx.transport().create().unwrap();
+        let sub = queue.subscribe(&tp, "TEST");
+        assert!(sub.is_ok());
     }
 }

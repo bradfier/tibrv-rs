@@ -55,9 +55,8 @@ mod tests {
 
         let tp = ctx.transport().create().expect("Couldn't create transport");
         let q = ctx.queue().expect("Couldn't create queue");
-        let chan = q.subscribe(&tp, "TEST").expect("Couldn't register subscription");
-        q.dispatch().expect("Failed to dispatch");
-        let msg = unsafe { chan.recv().unwrap() };
+        let sub = q.subscribe(&tp, "TEST").expect("Couldn't register subscription");
+        let msg = sub.next().expect("Couldn't get next message.");
         let field = msg.get_field_by_name("DATA").expect("Couldn't find DATA Field");
         let data = <&CStr>::tibrv_try_decode(&field);
         assert!(data.is_ok());
