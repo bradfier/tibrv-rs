@@ -2,6 +2,7 @@
 
 use tibrv_sys::*;
 use message::Msg;
+use event::Queue;
 use std::ffi::{CString,CStr};
 use std::marker::PhantomData;
 use std::ptr::null;
@@ -11,7 +12,7 @@ use std::ptr::null;
 /// A Rendezvous transport can carry messages across a network,
 /// between processes, or within a single process.
 pub struct Transport<'a> {
-    inner: tibrvTransport,
+    pub(crate) inner: tibrvTransport,
     phantom: PhantomData<&'a RvCtx>,
 }
 
@@ -100,6 +101,10 @@ impl RvCtx {
             network: None,
             phantom: PhantomData,
         }
+    }
+
+    pub fn queue<'a>(&'a self) -> Result<Queue, &'static str> {
+        Queue::new(&self)
     }
 }
 

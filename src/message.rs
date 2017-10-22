@@ -13,6 +13,7 @@ use std::ffi::CString;
 /// of the Rust application. When this type is dropped,
 /// `tibrvMsg_Destroy` will be run to free any memory allocated
 /// to store the message.
+#[derive(Debug)]
 pub struct Msg {
     pub(crate) inner: tibrvMsg,
 }

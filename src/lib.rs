@@ -4,12 +4,15 @@ extern crate chrono;
 pub mod field;
 pub mod message;
 pub mod context;
+pub mod event;
 
 #[cfg(test)]
 mod tests {
     #[test]
     fn it_works() {}
 
+    // Both the send and recv tests require a running RVD on the
+    // default port on localhost.
     #[test]
     #[ignore]
     fn send_msg() {
@@ -35,5 +38,28 @@ mod tests {
 
         tp.send(&mut msg);
 
+    }
+
+    // Receive test requires that something be sending messages to the
+    // "TEST" subject with the "DATA" field populated with a string.
+    // You can use the `tibrvsend` binary in the Rendezvous distribution
+    // to accomplish this.
+    #[test]
+    #[ignore]
+    fn recv_msg() {
+        use context;
+        use field::Decodable;
+        use std::ffi::CStr;
+
+        let ctx = context::RvCtx::new().expect("Couldn't create RV machinery");
+
+        let tp = ctx.transport().create().expect("Couldn't create transport");
+        let q = ctx.queue().expect("Couldn't create queue");
+        let chan = q.subscribe(&tp, "TEST").expect("Couldn't register subscription");
+        q.dispatch().expect("Failed to dispatch");
+        let msg = unsafe { chan.recv().unwrap() };
+        let field = msg.get_field_by_name("DATA").expect("Couldn't find DATA Field");
+        let data = <&CStr>::tibrv_try_decode(&field);
+        assert!(data.is_ok());
     }
 }
