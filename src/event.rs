@@ -8,13 +8,29 @@ use context::{RvCtx, Transport};
 use message::{Msg, BorrowedMsg};
 use std::marker::PhantomData;
 
+unsafe extern "C" fn sync_callback(_event: tibrvEvent,
+                                   message: tibrvMsg,
+                                   closure: *mut ::std::os::raw::c_void)
+-> () {
+    // If anything goes wrong in this callback, we have no
+    // way to indicate that to Rendezvous without causing an abort.
+    // Instead we catch any recoverable unwind.
+    let _ =::std::panic::catch_unwind(move || {
+        let sender: Box<mpsc::Sender<Msg>> =
+            Box::from_raw(closure as *mut mpsc::Sender<Msg>);
+        let msg = BorrowedMsg { inner: message };
+        sender.send(msg.detach().unwrap()).unwrap();
+        ::std::mem::forget(sender); // Don't run Drop on the channel
+    });
+}
+
 /// Struct representing a Rendezvous event queue.
 ///
 /// Represents a queue of events waiting for dispatch, at present
 /// only message queues are implemented, although the library supports
 /// IO (socket) events and arbitrary timers as well.
 pub struct Queue<'a> {
-    inner: tibrvQueue,
+    pub(crate) inner: tibrvQueue,
     phantom: PhantomData<&'a RvCtx>,
 }
 
@@ -41,21 +57,6 @@ impl<'a> Queue<'a> {
         }
     }
 
-    unsafe extern "C" fn sync_callback(_event: tibrvEvent,
-                                       message: tibrvMsg,
-                                       closure: *mut ::std::os::raw::c_void)
-        -> () {
-        // If anything goes wrong in this callback, we have no
-        // way to indicate that to Rendezvous without causing an abort.
-        // Instead we catch any recoverable unwind.
-        let _ =::std::panic::catch_unwind(move || {
-            let sender: Box<mpsc::Sender<Msg>> =
-                Box::from_raw(closure as *mut mpsc::Sender<Msg>);
-            let msg = BorrowedMsg { inner: message };
-            sender.send(msg.detach().unwrap()).unwrap();
-        });
-    }
-
     /// Subscribe to a message subject.
     ///
     /// Sets up the callback to copy messages from the event
@@ -75,7 +76,7 @@ impl<'a> Queue<'a> {
                 tibrvEvent_CreateListener(
                     &mut ptr,
                     self.inner,
-                    Some(Queue::sync_callback),
+                    Some(sync_callback),
                     tp.inner,
                     subject_c.as_ptr(),
                     send_ptr as *const ::std::os::raw::c_void
@@ -116,12 +117,28 @@ impl<'a> Subscription<'a> {
         }
     }
 
+    // Non blocking try-dispatch.
+    fn poll(&self) -> Result<(), &'static str> {
+        match unsafe { tibrvQueue_TimedDispatch(self.queue.inner, 0.0) } {
+            tibrv_status::TIBRV_OK => Ok(()),
+            _ => Err("No messages enqueued."),
+        }
+    }
+
     /// Get the next message available on this subscription.
     ///
     /// Blocks until a message is available in the queue.
     pub fn next(&self) -> Result<Msg, &'static str> {
+        if let Ok(m) = self.channel.try_recv() {
+            return Ok(m)
+        }
         self.dispatch()?;
         self.channel.recv().map_err(|_| "Bork!")
+    }
+
+    pub fn try_next(&self) -> Result<Msg, mpsc::TryRecvError> {
+        let _ = self.poll(); // Ignore this "error"
+        self.channel.try_recv()
     }
 }
 
@@ -148,13 +165,13 @@ mod tests {
         assert_eq!(0, queue.unwrap().count().unwrap());
     }
 
-    #[ignore] // Requires a running rvd
-    #[test]
-    fn subscribe() {
-        let ctx = RvCtx::new().unwrap();
-        let queue = ctx.queue().unwrap();
-        let tp = ctx.transport().create().unwrap();
-        let sub = queue.subscribe(&tp, "TEST");
-        assert!(sub.is_ok());
-    }
+    //#[ignore] // Requires a running rvd
+    //#[test]
+    //fn subscribe() {
+    //    let ctx = RvCtx::new().unwrap();
+    //    let queue = ctx.queue().unwrap();
+    //    let tp = ctx.transport().create().unwrap();
+    //    let sub = queue.subscribe(&tp, "TEST");
+    //    assert!(sub.is_ok());
+    //}
 }

@@ -7,7 +7,7 @@ readme = "README.md"
 keywords = ["tibrv", "messaging"]
 repository = "https://github.com/bradfier/tibrv-rs"
 homepage = "https://github.com/bradfier/tibrv-rs"
-documentation = "https://docs.rs/tibrv"
+documentation = "https://bradfier.github.io/tibrv-rs/"
 description = """
 Bindings to the C library provided by TIBCO Rendezvous, a "high performance
 message oriented middleware" commonly used in the financial industry.
@@ -20,3 +20,9 @@ travis-ci = { repository = "bradfier/tibrv-rs" }
 [dependencies]
 chrono = "0.4"
 tibrv-sys = { version = "0.1", path = "tibrv-sys" }
+tokio-core = { version = "0.1.10", optional = true }
+mio = { version = "0.6.10", optional = true }
+futures = { version = "0.1.16", optional = true }
+
+[features]
+tokio = ["tokio-core", "futures", "mio"]

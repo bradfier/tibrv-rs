@@ -3,6 +3,8 @@
 use tibrv_sys::*;
 use message::Msg;
 use event::Queue;
+#[cfg(feature = "tokio")]
+use async::AsyncQueue;
 use std::ffi::{CString,CStr};
 use std::marker::PhantomData;
 use std::ptr::null;
@@ -103,8 +105,15 @@ impl RvCtx {
         }
     }
 
+    /// Creates and returns an event queue.
     pub fn queue<'a>(&'a self) -> Result<Queue, &'static str> {
         Queue::new(&self)
+    }
+
+    #[cfg(feature = "tokio")]
+    /// Creates and returns an asynchronous event queue.
+    pub fn async_queue<'a>(&'a self) -> Result<AsyncQueue, &'static str> {
+        AsyncQueue::new(&self)
     }
 }
 
