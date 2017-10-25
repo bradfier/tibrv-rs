@@ -31,16 +31,30 @@ impl<'a> AsyncQueue<'a> {
 
     unsafe extern "C" fn callback(_queue: tibrvQueue,
                                   closure: *mut ::std::os::raw::c_void)
-        -> () {
-        let listen_ptr = closure as *const Mutex<Vec<mio::SetReadiness>>;
-        let vec_mutex = Arc::from_raw(listen_ptr);
-        {
-            let vec = vec_mutex.lock().unwrap();
-            for l in &*vec {
-                let _ = l.set_readiness(mio::Ready::readable());
+                                  -> () {
+        // As with the sync version, we can't panic and unwind into the
+        // caller, so we catch any recoverable panic and ignore it.
+        let _ = ::std::panic::catch_unwind(move || {
+            let listen_ptr = closure as *const Mutex<Vec<mio::SetReadiness>>;
+            let vec_mutex = Arc::from_raw(listen_ptr);
+            {
+                let vec = vec_mutex.lock().unwrap();
+                for l in &*vec {
+                    let _ = l.set_readiness(mio::Ready::readable());
+                }
             }
+            // Don't run Drop on the listener list
+            ::std::mem::forget(vec_mutex);
+        });
+    }
+
+    fn has_hook(&self) -> bool {
+        let mut ptr: tibrvQueueHook = unsafe { ::std::mem::zeroed() };
+        let result = unsafe { tibrvQueue_GetHook(self.queue.inner, &mut ptr) };
+        match result {
+            tibrv_status::TIBRV_OK => ptr.is_some(),
+            _ => false,
         }
-        ::std::mem::forget(vec_mutex); // Don't run Drop on the listener list
     }
 
     /// Asynchronously subscribe to a message subject.
@@ -48,25 +62,27 @@ impl<'a> AsyncQueue<'a> {
     /// Sets up the channels as in a synchronous subscription and returns
     /// an `AsyncSub` stream.
     pub fn subscribe(&self, handle: &Handle, tp: &Transport, subject: &str)
-        -> Result<AsyncSub, &'static str> {
+                     -> Result<AsyncSub, &'static str> {
         let (registration, ready) = mio::Registration::new2();
         let mut listeners = self.listeners.lock().map_err(|_| "Bork!")?;
         listeners.push(ready);
         let sub = self.queue.subscribe(tp, subject)?;
 
-        // Set up event hook
-        let l_arc = self.listeners.clone();
-        let l_ptr = Arc::into_raw(l_arc);
-        let result = unsafe {
-            tibrvQueue_SetHook(
-                self.queue.inner,
-                Some(AsyncQueue::callback),
-                l_ptr as *mut ::std::os::raw::c_void,
-            )
-        };
-        if result != tibrv_status::TIBRV_OK {
-            return Err("Bork!");
-        };
+        if !self.has_hook() {
+            // Set up event hook
+            let l_arc = Arc::clone(&self.listeners);
+            let l_ptr = Arc::into_raw(l_arc);
+            let result = unsafe {
+                tibrvQueue_SetHook(
+                    self.queue.inner,
+                    Some(AsyncQueue::callback),
+                    l_ptr as *mut ::std::os::raw::c_void,
+                )
+            };
+            if result != tibrv_status::TIBRV_OK {
+                return Err("Bork!");
+            };
+        }
         Ok(AsyncSub {
             sub: sub,
             io: PollEvented::new(registration, handle).map_err(|_| "Bork!")?,
@@ -121,5 +137,31 @@ impl<'a> Stream for AsyncSub<'a> {
 
     fn poll(&mut self) -> Poll<Option<Msg>, io::Error> {
         Ok(Async::Ready(Some(try_nb!(self.next()))))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use context::RvCtx;
+    use tokio_core::reactor::Core;
+
+    #[test]
+    fn no_hook() {
+        let ctx = RvCtx::new().unwrap();
+        let queue = ctx.async_queue().unwrap();
+        assert_eq!(false, queue.has_hook());
+    }
+
+    #[test]
+    #[ignore]
+    fn has_hook() {
+        let mut core = Core::new().unwrap();
+
+        let ctx = RvCtx::new().unwrap();
+        let tp = ctx.transport().create().unwrap();
+        let queue = ctx.async_queue().unwrap();
+
+        let sub = queue.subscribe(&core.handle(), &tp, "TEST").unwrap();
+        assert_eq!(true, queue.has_hook());
     }
 }

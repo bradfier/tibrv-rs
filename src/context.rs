@@ -3,11 +3,17 @@
 use tibrv_sys::*;
 use message::Msg;
 use event::Queue;
-#[cfg(feature = "tokio")]
-use async::AsyncQueue;
 use std::ffi::{CString,CStr};
 use std::marker::PhantomData;
 use std::ptr::null;
+
+#[cfg(feature = "tokio")]
+use async::AsyncQueue;
+#[cfg(feature = "tokio")]
+use futures::prelude::{Sink, Async, AsyncSink, StartSend, Poll};
+#[cfg(feature = "tokio")]
+use std::io;
+
 
 /// A struct representing a Rendezvous transport object.
 ///
@@ -96,7 +102,7 @@ impl RvCtx {
     }
 
     /// Gets a transport builder, with the default parameters set.
-    pub fn transport<'a>(&'a self) -> TransportBuilder<'a> {
+    pub fn transport(&self) -> TransportBuilder {
         TransportBuilder {
             service: None,
             daemon: None,
@@ -107,13 +113,13 @@ impl RvCtx {
 
     /// Creates and returns an event queue.
     pub fn queue<'a>(&'a self) -> Result<Queue, &'static str> {
-        Queue::new(&self)
+        Queue::new(self)
     }
 
     #[cfg(feature = "tokio")]
     /// Creates and returns an asynchronous event queue.
     pub fn async_queue<'a>(&'a self) -> Result<AsyncQueue, &'static str> {
-        AsyncQueue::new(&self)
+        AsyncQueue::new(self)
     }
 }
 
@@ -199,6 +205,30 @@ impl<'a> Transport<'a> {
 impl<'a> Drop for Transport<'a> {
     fn drop(&mut self) {
         unsafe { tibrvTransport_Destroy(self.inner) };
+    }
+}
+
+#[cfg(feature = "tokio")]
+impl<'a> Sink for Transport<'a> {
+    type SinkItem = Msg;
+    type SinkError = io::Error; // Should eventually be tibrv::Error
+
+    // libtibrv doesn't provide an explicit "async send" routine
+    // From the documentation it looks like tibrvTransport_Send
+    // isn't supposed to block, so we have to just assume it's
+    // doing internal buffering.
+    fn start_send(&mut self, mut item: Msg)
+        -> StartSend<Self::SinkItem, Self::SinkError> {
+        // Here we do the send immediately, then always return
+        // complete when poll_complete is called later.
+        Transport::send(self, &mut item).map_err(|_| {
+            io::Error::new(io::ErrorKind::Other, "Unable to send on transport")
+        })?;
+        Ok(AsyncSink::Ready)
+    }
+
+    fn poll_complete(&mut self) -> Poll<(), Self::SinkError> {
+        Ok(Async::Ready(()))
     }
 }
 

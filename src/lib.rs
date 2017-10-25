@@ -43,7 +43,7 @@ mod tests {
         assert!(msg.add_field(&mut field)
                 .is_ok());
 
-        assert!(msg.set_send_subject("TEST").is_ok());
+        assert!(msg.set_send_subject("DUMMY").is_ok());
 
         let tp = ctx.transport().create().unwrap(); // Create default transport
 
@@ -71,34 +71,5 @@ mod tests {
         let field = msg.get_field_by_name("DATA").expect("Couldn't find DATA Field");
         let data = <&CStr>::tibrv_try_decode(&field);
         assert!(data.is_ok());
-    }
-
-    #[cfg(feature = "tokio")]
-    #[test]
-    #[ignore]
-    fn async_recv() {
-        use context;
-        use field::Decodable;
-        use std::ffi::CStr;
-
-        use futures::stream::Stream;
-        use tokio_core::reactor::Core;
-
-        let mut core = Core::new().unwrap();
-        let ctx = context::RvCtx::new().expect("Coudln't create RV machinery");
-        let tp = ctx.transport().create().expect("Couldn't create transport");
-
-        let queue = ctx.async_queue().unwrap();
-
-        let stream = queue.subscribe(&core.handle(), &tp, "TEST").unwrap();
-
-        let messages = stream.for_each(|msg| {
-            let field = msg.get_field_by_name("DATA").expect("Couldn't find DATA field");
-            let data = <&CStr>::tibrv_try_decode(&field);
-            assert!(data.is_ok());
-            println!("{:?}", data.unwrap());
-            Ok(())
-        });
-        core.run(messages).unwrap();
     }
 }
