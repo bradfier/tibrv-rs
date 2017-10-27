@@ -2,7 +2,8 @@ extern crate tibrv;
 extern crate futures;
 extern crate tokio_core;
 
-use tibrv::context;
+use tibrv::context::{RvCtx, TransportBuilder};
+use tibrv::async::AsyncQueue;
 
 use futures::prelude::Stream;
 use tokio_core::reactor::Core;
@@ -13,10 +14,10 @@ use tokio_core::reactor::Core;
 /// back via a `Sink`, implemented by the `Transport`.
 fn main() {
     let mut core = Core::new().unwrap(); // Create a tokio event loop
-    let ctx = context::RvCtx::new().expect("Couldn't start tibrv context");
-    let tp = ctx.transport().create().expect("Couldn't create default transport.");
+    let ctx = RvCtx::new().expect("Couldn't start tibrv context");
+    let tp = TransportBuilder::new(&ctx).create().expect("Couldn't create default transport.");
 
-    let event_queue = ctx.async_queue().expect("Couldn't create event queue.");
+    let event_queue = AsyncQueue::new(&ctx).expect("Couldn't create event queue.");
 
     // Set up the incoming event stream
     let incoming = event_queue.subscribe(&core.handle(), &tp, "TEST").unwrap();

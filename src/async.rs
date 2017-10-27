@@ -22,7 +22,8 @@ pub struct AsyncQueue<'a> {
 }
 
 impl<'a> AsyncQueue<'a> {
-    pub(crate) fn new(ctx: &'a RvCtx) -> Result<Self, &'static str> {
+    /// Construct a new asynchronous event queue.
+    pub fn new(ctx: &'a RvCtx) -> Result<Self, &'static str> {
         Ok(AsyncQueue {
             queue: Queue::new(ctx)?,
             listeners: Arc::new(Mutex::new(Vec::new())),
@@ -142,13 +143,14 @@ impl<'a> Stream for AsyncSub<'a> {
 
 #[cfg(test)]
 mod tests {
-    use context::RvCtx;
+    use context::{RvCtx, TransportBuilder};
+    use async::AsyncQueue;
     use tokio_core::reactor::Core;
 
     #[test]
     fn no_hook() {
         let ctx = RvCtx::new().unwrap();
-        let queue = ctx.async_queue().unwrap();
+        let queue = AsyncQueue::new(&ctx).unwrap();
         assert_eq!(false, queue.has_hook());
     }
 
@@ -158,8 +160,8 @@ mod tests {
         let mut core = Core::new().unwrap();
 
         let ctx = RvCtx::new().unwrap();
-        let tp = ctx.transport().create().unwrap();
-        let queue = ctx.async_queue().unwrap();
+        let tp = TransportBuilder::new(&ctx).create().unwrap();
+        let queue = AsyncQueue::new(&ctx).unwrap();
 
         assert_eq!(false, queue.has_hook());
         let sub = queue.subscribe(&core.handle(), &tp, "TEST").unwrap();

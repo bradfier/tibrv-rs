@@ -35,7 +35,11 @@ pub struct Queue<'a> {
 }
 
 impl<'a> Queue<'a> {
-    pub(crate) fn new(_ctx: &'a RvCtx) -> Result<Self, &'static str> {
+    /// Constructs a new event queue. 
+    ///
+    /// The supplied `RvCtx` must live at least as long as any created
+    /// queues.
+    pub fn new(_ctx: &'a RvCtx) -> Result<Self, &'static str> {
         let mut ptr: tibrvQueue = unsafe { mem::zeroed() };
         match unsafe { tibrvQueue_Create(&mut ptr) } {
             tibrv_status::TIBRV_OK => Ok(
@@ -156,11 +160,12 @@ impl<'a> Drop for Subscription<'a> {
 #[cfg(test)]
 mod tests {
     use context::RvCtx;
+    use event::Queue;
 
     #[test]
     fn creation() {
         let ctx = RvCtx::new().unwrap();
-        let queue = ctx.queue();
+        let queue = Queue::new(&ctx);
         assert!(queue.is_ok());
         assert_eq!(0, queue.unwrap().count().unwrap());
     }

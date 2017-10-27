@@ -62,7 +62,7 @@
 //! ```no_run
 //! use tibrv::message::Msg;
 //! use tibrv::field::Builder;
-//! use tibrv::context::RvCtx;
+//! use tibrv::context::{RvCtx, TransportBuilder};
 //!
 //! let ctx = RvCtx::new().unwrap(); // Starts the Rendezvous internal machinery
 //! let mut msg = Msg::new().unwrap();
@@ -75,7 +75,7 @@
 //! assert!(msg.add_field(&mut field).is_ok()); // Copy the field into the message.
 //! assert!(msg.set_send_subject("TEST.SUBJECT").is_ok()); // Set the send subject.
 //!
-//! let tp = ctx.transport().create().unwrap(); // Create a default Rendezvous transport.
+//! let tp = TransportBuilder::new(&ctx).create().unwrap(); // Create a default Rendezvous transport.
 //!
 //! assert!(tp.send(&mut msg).is_ok());
 //! ```
@@ -83,12 +83,13 @@
 //! ### Receiving a message
 //!
 //! ```no_run
-//! use tibrv::context::RvCtx;
+//! use tibrv::context::{RvCtx, TransportBuilder};
+//! use tibrv::event::Queue;
 //!
 //! let ctx = RvCtx::new().unwrap(); // Starts the Rendezvous internal machinery
-//! let tp = ctx.transport().create().unwrap(); // Create a default Rendezvous transport.
+//! let tp = TransportBuilder::new(&ctx).create().unwrap(); // Create a default Rendezvous transport.
 //!
-//! let queue = ctx.queue().unwrap(); // Create a new event queue.
+//! let queue = Queue::new(&ctx).unwrap(); // Create a new event queue.
 //! let subscription = queue.subscribe(&tp, "TEST.SUBJECT").unwrap(); // Subscribe to a Rendezvous subject on this event queue.
 //!
 //! let msg = subscription.next().unwrap(); // Block, waiting for the next message to arrive on the subscribed subject.
@@ -124,11 +125,11 @@ mod tests {
     #[ignore]
     fn send_msg() {
         use std::ffi::CString;
-        use context;
+        use context::{RvCtx, TransportBuilder};
         use message::Msg;
         use field::Builder;
 
-        let ctx = context::RvCtx::new().unwrap();
+        let ctx = RvCtx::new().unwrap();
         let mut msg = Msg::new().unwrap();
 
         let data = CString::new("Hello, world!").unwrap();
@@ -141,7 +142,7 @@ mod tests {
 
         assert!(msg.set_send_subject("DUMMY").is_ok());
 
-        let tp = ctx.transport().create().unwrap(); // Create default transport
+        let tp = TransportBuilder::new(&ctx).create().unwrap(); // Create default transport
 
         assert!(tp.send(&mut msg).is_ok());
 
@@ -154,14 +155,15 @@ mod tests {
     #[test]
     #[ignore]
     fn recv_msg() {
-        use context;
+        use event::Queue;
+        use context::{RvCtx, TransportBuilder};
         use field::Decodable;
         use std::ffi::CStr;
 
-        let ctx = context::RvCtx::new().expect("Couldn't create RV machinery");
+        let ctx = RvCtx::new().expect("Couldn't create RV machinery");
 
-        let tp = ctx.transport().create().expect("Couldn't create transport");
-        let q = ctx.queue().expect("Couldn't create queue");
+        let tp = TransportBuilder::new(&ctx).create().expect("Couldn't create transport");
+        let q = Queue::new(&ctx).expect("Couldn't create queue");
         let sub = q.subscribe(&tp, "TEST").expect("Couldn't register subscription");
         let msg = sub.next().expect("Couldn't get next message.");
         let field = msg.get_field_by_name("DATA").expect("Couldn't find DATA Field");

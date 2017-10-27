@@ -33,6 +33,23 @@ pub struct TransportBuilder<'a> {
 }
 
 impl<'a> TransportBuilder<'a> {
+    /// Constructs a new TransportBuilder with the default parameters selected.
+    ///
+    /// The supplied `RvCtx` must live at least as long as any constructed
+    /// transports.
+    ///
+    /// For further details on `service`, `daemon` and `network`, see the
+    /// documentation on [`Transport`].
+    ///
+    /// [`Transport`]: struct.Transport.html
+    pub fn new(_ctx: &'a RvCtx) -> Self {
+        TransportBuilder {
+            service: None,
+            daemon: None,
+            network: None,
+            phantom: PhantomData,
+        }
+    }
     /// Sets the `service` parameter.
     pub fn with_service(mut self, service: &str) -> Result<Self, &'static str> {
         self.service = Some(CString::new(service).map_err(|_| "Bork!")?);
@@ -99,27 +116,6 @@ impl RvCtx {
                 .to_string_lossy()
                 .into_owned()
         }
-    }
-
-    /// Gets a transport builder, with the default parameters set.
-    pub fn transport(&self) -> TransportBuilder {
-        TransportBuilder {
-            service: None,
-            daemon: None,
-            network: None,
-            phantom: PhantomData,
-        }
-    }
-
-    /// Creates and returns an event queue.
-    pub fn queue<'a>(&'a self) -> Result<Queue, &'static str> {
-        Queue::new(self)
-    }
-
-    #[cfg(feature = "tokio")]
-    /// Creates and returns an asynchronous event queue.
-    pub fn async_queue<'a>(&'a self) -> Result<AsyncQueue, &'static str> {
-        AsyncQueue::new(self)
     }
 }
 
