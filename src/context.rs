@@ -19,6 +19,31 @@ use std::io;
 ///
 /// A Rendezvous transport can carry messages across a network,
 /// between processes, or within a single process.
+///
+/// `Transport` is configured with three optional parameters:
+///
+///  - The `service` parameter may be empty, a 'service name' or a port
+///  number. The default, or empty, value causes Rendezvous to search for
+///  a 'rendezvous' network service in NIS or /etc/services
+///  If no such name can be resolved, it defaults to a protocol specific
+///  port number.
+///
+///  - The `network` parameter instructs the Rendezvous daemon to use
+///  a particular network for communications on this transport.
+///  The parameter consists of up to three parts, separated by semicolons,
+///  in the form `network;multicast groups;send address`.
+///  For example:
+///    * `192.168.1.1` - Network interface only
+///    * `eth0;255.1.1.1` - Network interface and multicast group
+///
+///  - The `daemon` parameter tells the Rendezvous runtime how to
+///  find the daemon. The daemon socket is given in the format `hostname:port`.
+///  An empty value uses the daemon running on localhost, on the default port.
+///
+///  Considerable detail on the configuration and behaviour of Rendezvous
+///  transports is available in the [TIBCO Rendezvous Concepts][1] guide.
+///
+///  [1]: https://docs.tibco.com/pub/rv_zos/8.4.5/doc/pdf/TIB_rv_concepts.pdf
 pub struct Transport<'a> {
     pub(crate) inner: tibrvTransport,
     phantom: PhantomData<&'a RvCtx>,
