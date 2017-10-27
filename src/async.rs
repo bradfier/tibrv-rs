@@ -161,6 +161,7 @@ mod tests {
         let tp = ctx.transport().create().unwrap();
         let queue = ctx.async_queue().unwrap();
 
+        assert_eq!(false, queue.has_hook());
         let sub = queue.subscribe(&core.handle(), &tp, "TEST").unwrap();
         assert_eq!(true, queue.has_hook());
     }
