@@ -1,3 +1,99 @@
+//! # Rendezvous bindings for Rust
+//!
+//! This library provides bindings to the `libtibrv` C library, distributed
+//! by [TIBCO][1] for interacting with the Rendezvous message-oriented-middleware.
+//! The library itself is still a work in progress, so some features may be missing,
+//! however those which are implemented should be fully working.
+//!
+//! [1]: https://www.tibco.com/products/tibco-rendezvous
+//!
+//! The tibrv library attempts to make using libtibrv as ergonomic as possible,
+//! and includes automatic resource management (RAII) and an optional, Tokio-based
+//! asynchronous layer.
+//!
+//! ## Environment Setup
+//!
+//! To use tibrv, you need to set up your environment so that your Rendezvous
+//! distribution (from TIBCO) is pointed to by the `TIBRV` variable, and
+//! the libtibrv library must be available in your `LD_LIBRARY_PATH`.
+//!
+//! For example:
+//!
+//! ```sh,no_run
+//! export TIBRV=$HOME/tibco/tibrv8.4/
+//! export LD_LIBRARY_PATH=$TIBRV/lib:$LD_LIBRARY_PATH
+//! ```
+//!
+//! ## Working with Messages
+//!
+//! A message is the main structure used to encapsulate data sent or received
+//! via Rendezvous.
+//!
+//! ### Creating a message, and setting the subject
+//!
+//! ```
+//! use tibrv::message::Msg;
+//!
+//! let mut msg = Msg::new().expect("Failed to create message.");
+//! msg.set_send_subject("TEST_SUBJECT");
+//! ```
+//!
+//! ### Adding a field to a message
+//! All scalar and vector types are copied into the message
+//! once `add_field` is called, so the field constructors
+//! take borrows to avoid double copying.
+//!
+//! ```
+//! use tibrv::message::Msg;
+//! use tibrv::field::Builder;
+//!
+//! let mut msg = Msg::new().expect("Failed to create message.");
+//!
+//! let data: u32 = 42;
+//! let mut field = Builder::new(&data)
+//!     .with_name("fieldName")
+//!     .encode();
+//!
+//! assert!(msg.add_field(&mut field).is_ok())
+//! ```
+//!
+//! ### Sending a message
+//!
+//! ```no_run
+//! use tibrv::message::Msg;
+//! use tibrv::field::Builder;
+//! use tibrv::context::RvCtx;
+//!
+//! let ctx = RvCtx::new().unwrap(); // Starts the Rendezvous internal machinery
+//! let mut msg = Msg::new().unwrap();
+//!
+//! let data: u32 = 42;
+//! let mut field = Builder::new(&data)
+//!     .with_name("fieldName")
+//!     .encode();
+//!
+//! assert!(msg.add_field(&mut field).is_ok()); // Copy the field into the message.
+//! assert!(msg.set_send_subject("TEST.SUBJECT").is_ok()); // Set the send subject.
+//!
+//! let tp = ctx.transport().create().unwrap(); // Create a default Rendezvous transport.
+//!
+//! assert!(tp.send(&mut msg).is_ok());
+//! ```
+//!
+//! ### Receiving a message
+//!
+//! ```no_run
+//! use tibrv::context::RvCtx;
+//!
+//! let ctx = RvCtx::new().unwrap(); // Starts the Rendezvous internal machinery
+//! let tp = ctx.transport().create().unwrap(); // Create a default Rendezvous transport.
+//!
+//! let queue = ctx.queue().unwrap(); // Create a new event queue.
+//! let subscription = queue.subscribe(&tp, "TEST.SUBJECT").unwrap(); // Subscribe to a Rendezvous subject on this event queue.
+//!
+//! let msg = subscription.next().unwrap(); // Block, waiting for the next message to arrive on the subscribed subject.
+//! ```
+
 extern crate tibrv_sys;
 extern crate chrono;
 
