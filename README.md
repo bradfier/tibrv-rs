@@ -8,8 +8,7 @@ Rust bindings for TIBCO Rendezvous, a message-oriented middleware.
 tibrv-rs is a set of Rust bindings to the [C Implementation](https://docs.tibco.com/pub/rendezvous/8.4.0-february-2012/doc/pdf/tib_rv_c_reference.pdf)
 provided by TIBCO.
 
-tibrv-rs is still rapidly developing, and as evidenced by the empty 0.0.0 version published on [crates.io](https://crates.io/crates/tibrv)
-is not ready for use in real projects. However, please clone this repo and hack on what's been published so far!
+tibrv-rs is still developing, and until version 1.0.0 the API is likely to change.
 
 ## License
 `tibrv-rs` is licensed under either of
