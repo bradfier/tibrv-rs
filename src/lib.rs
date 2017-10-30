@@ -8,8 +8,7 @@
 //! [1]: https://www.tibco.com/products/tibco-rendezvous
 //!
 //! The tibrv library attempts to make using libtibrv as ergonomic as possible,
-//! and includes automatic resource management (RAII) and an optional, Tokio-based
-//! asynchronous layer.
+//! and includes an optional, Tokio-based asynchronous layer.
 //!
 //! ## Environment Setup
 //!

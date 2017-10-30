@@ -88,15 +88,15 @@ impl Msg {
         assert_ne!(name.is_some(), id.is_some(),
                 "One of id or name must be provided.");
         let mut field: tibrvMsgField = unsafe { mem::zeroed() };
-        let field_name = CString::new(name.unwrap_or("")).unwrap();
-        let name_ptr = name.map_or(std::ptr::null(), |_| field_name.as_ptr());
+        let field_name = name.map_or(None, |s| Some(CString::new(s).unwrap()));
+        let name_ptr = field_name.as_ref()
+                       .map_or(std::ptr::null(), |s| s.as_ptr());
         let result = unsafe {
             tibrvMsg_GetFieldEx(self.inner,
                                 name_ptr,
                                 &mut field,
                                 id.unwrap_or(0) as tibrv_u16)
         };
-
         match result {
             tibrv_status::TIBRV_OK => {
                 Ok(BorrowedMsgField {

@@ -2,13 +2,10 @@
 
 use tibrv_sys::*;
 use message::Msg;
-use event::Queue;
 use std::ffi::{CString,CStr};
 use std::marker::PhantomData;
 use std::ptr::null;
 
-#[cfg(feature = "tokio")]
-use async::AsyncQueue;
 #[cfg(feature = "tokio")]
 use futures::prelude::{Sink, Async, AsyncSink, StartSend, Poll};
 #[cfg(feature = "tokio")]

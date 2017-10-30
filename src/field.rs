@@ -1,4 +1,8 @@
 //! Interfaces for constructing Rendezvous Message Fields
+//!
+//! All data to be sent via a Rendezvous message must be tagged
+//! and encapsulated in a "message field", represented here by
+//! the `MsgField` type.
 
 use tibrv_sys::*;
 use message::{Msg, BorrowedMsg};
@@ -12,7 +16,7 @@ use std;
 
 /// A structure wrapping a `tibrvMsgField`
 pub struct MsgField {
-    pub name: CString,
+    pub name: Option<CString>,
     pub inner: tibrvMsgField,
 }
 
@@ -129,10 +133,11 @@ pub trait Decodable {
         where Self: Sized;
 }
 
-macro_rules! some_ident {
+macro_rules! must_name {
     ($name:ident, $id:ident) => (
-        assert!($name.is_some() || $id.is_some(),
-                "At least one of id or name must be defined.");
+        if $id.is_some() {
+            assert!($name.is_some(), "ID may only be defined along with name.");
+        }
     )
 }
 
@@ -140,9 +145,9 @@ macro_rules! encodable {
     ($base_type:ty, $tibrv_type:tt, $local:ident, $tibrv_flag:expr) => (
         impl Encodable for $base_type {
             fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> MsgField {
-                some_ident!(name, id);
-                let name_cstr = CString::new(name.unwrap_or("")).unwrap();
-                let ptr = name.map_or(std::ptr::null(), |_| name_cstr.as_ptr());
+                must_name!(name, id);
+                let name_cstr = name.map_or(None, |s| Some(CString::new(s).unwrap()));
+                let ptr = name_cstr.as_ref().map_or(std::ptr::null(), |s| s.as_ptr());
                 MsgField {
                     name: name_cstr,
                     inner: tibrvMsgField {
@@ -176,9 +181,9 @@ macro_rules! array_encodable {
     ($base_type:ty, $tibrv_flag:expr) => (
         impl<'a> Encodable for &'a [$base_type] {
             fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> MsgField {
-                some_ident!(name, id);
-                let name_cstr = CString::new(name.unwrap_or("")).unwrap();
-                let ptr = name.map_or(std::ptr::null(), |_| name_cstr.as_ptr());
+                must_name!(name, id);
+                let name_cstr = name.map_or(None, |s| Some(CString::new(s).unwrap()));
+                let ptr = name_cstr.as_ref().map_or(std::ptr::null(), |s| s.as_ptr());
                 MsgField {
                     name: name_cstr,
                     inner: tibrvMsgField {
@@ -210,9 +215,9 @@ macro_rules! array_encodable {
 
 impl<'a> Encodable for &'a CStr {
     fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> MsgField {
-        some_ident!(name, id);
-        let name_cstr = CString::new(name.unwrap_or("")).unwrap();
-        let ptr = name.map_or(std::ptr::null(), |_| name_cstr.as_ptr());
+        must_name!(name, id);
+        let name_cstr = name.map_or(None, |s| Some(CString::new(s).unwrap()));
+        let ptr = name_cstr.as_ref().map_or(std::ptr::null(), |s| s.as_ptr());
         MsgField {
             name: name_cstr,
             inner: tibrvMsgField {
@@ -242,9 +247,9 @@ impl<'a> Decodable for &'a CStr {
 // You can encode an owned Msg but decoding produces a BorrowedMsg
 impl<'a> Encodable for &'a Msg {
     fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> MsgField {
-        some_ident!(name, id);
-        let name_cstr = CString::new(name.unwrap_or("")).unwrap();
-        let ptr = name.map_or(std::ptr::null(), |_| name_cstr.as_ptr());
+        must_name!(name, id);
+        let name_cstr = name.map_or(None, |s| Some(CString::new(s).unwrap()));
+        let ptr = name_cstr.as_ref().map_or(std::ptr::null(), |s| s.as_ptr());
         MsgField {
             name: name_cstr,
             inner: tibrvMsgField {
@@ -313,10 +318,9 @@ pub fn tibrv_encode_port(port: &u16,
                          name: Option<&str>,
                          id: Option<u32>)
                          -> MsgField {
-    some_ident!(name, id);
-    let name_cstr = CString::new(name.unwrap_or("")).unwrap();
-    let ptr = name.map_or(std::ptr::null(), |_| name_cstr.as_ptr());
-
+    must_name!(name, id);
+    let name_cstr = name.map_or(None, |s| Some(CString::new(s).unwrap()));
+    let ptr = name_cstr.as_ref().map_or(std::ptr::null(), |s| s.as_ptr());
     MsgField {
         name: name_cstr,
         inner: tibrvMsgField {
@@ -349,9 +353,9 @@ pub unsafe fn tibrv_encode_opaque<'a, T: Copy>(slice: &'a [T],
                                                name: Option<&str>,
                                                id: Option<u32>)
                                                -> MsgField {
-    some_ident!(name, id);
-    let name_cstr = CString::new(name.unwrap_or("")).unwrap();
-    let ptr = name.map_or(std::ptr::null(), |_| name_cstr.as_ptr());
+    must_name!(name, id);
+    let name_cstr = name.map_or(None, |s| Some(CString::new(s).unwrap()));
+    let ptr = name_cstr.as_ref().map_or(std::ptr::null(), |s| s.as_ptr());
     MsgField {
         name: name_cstr,
         inner: tibrvMsgField {
@@ -500,9 +504,9 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn id_and_name_none() {
+    fn id_without_name() {
         let unsigned64: u64 = 0;
-        let _ = unsigned64.tibrv_encode(None, None);
+        let _ = unsigned64.tibrv_encode(None, Some(1));
     }
 
     #[test]

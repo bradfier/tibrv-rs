@@ -1,4 +1,14 @@
 //! Asynchronous interfaces for integrating Rendezvous with Tokio
+//!
+//! This module contains all the Tokio support for interacting
+//! with Rendezvous event streams asynchronously.
+//!
+//! Note that the current implementation harmlessly leaks one
+//! pointer for each subject that a particular queue unsubscribes from
+//! (i.e. by letting the `AsyncSub` drop while the `AsyncQueue`
+//! remains alive). If your application repeatedly subscribes and
+//! unsubscribes from subjects, consider periodically re-creating
+//! the event queue to free these orphan references.
 
 use tibrv_sys::*;
 use std::io;
@@ -93,6 +103,11 @@ impl<'a> AsyncQueue<'a> {
 
 /// A stream returned from the `AsyncQueue::subscribe` function representing
 /// the incoming messages on the selected subject.
+///
+/// Note that dropping an `AsyncSub` causes one pointer to be harmlessly
+/// leaked until the parent `AsyncQueue` is dropped. This is due to the
+/// queue holding one side of a `mio::Registration` which becomes defunct
+/// once the subscription is dropped.
 pub struct AsyncSub<'a> {
     sub: Subscription<'a>,
     io: PollEvented<mio::Registration>,
@@ -157,14 +172,14 @@ mod tests {
     #[test]
     #[ignore]
     fn has_hook() {
-        let mut core = Core::new().unwrap();
+        let core = Core::new().unwrap();
 
         let ctx = RvCtx::new().unwrap();
         let tp = TransportBuilder::new(&ctx).create().unwrap();
         let queue = AsyncQueue::new(&ctx).unwrap();
 
         assert_eq!(false, queue.has_hook());
-        let sub = queue.subscribe(&core.handle(), &tp, "TEST").unwrap();
+        let _ = queue.subscribe(&core.handle(), &tp, "TEST").unwrap();
         assert_eq!(true, queue.has_hook());
     }
 }
