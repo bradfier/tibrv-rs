@@ -5,6 +5,7 @@
 //! the `MsgField` type.
 
 use tibrv_sys::*;
+use errors::*;
 use message::{Msg, BorrowedMsg};
 use std::ffi::{CStr, CString};
 use chrono::NaiveDateTime;
@@ -129,7 +130,7 @@ pub trait Decodable {
     /// Rendezvous message fields include some primitive type information,
     /// but this method may fail if the sending party incorrectly encodes
     /// the data fields.
-    fn tibrv_try_decode(msg: &MsgField) -> Result<Self, &'static str>
+    fn tibrv_try_decode(msg: &MsgField) -> Result<Self, TibrvError>
         where Self: Sized;
 }
 
@@ -163,14 +164,14 @@ macro_rules! encodable {
         }
 
         impl Decodable for $base_type {
-            fn tibrv_try_decode(msg: &MsgField) -> Result<$base_type, &'static str> {
-                if msg.inner.count > 1 { return Err("Attempt to decode array MsgField as Scalar") };
+            fn tibrv_try_decode(msg: &MsgField) -> Result<$base_type, TibrvError> {
+                if msg.inner.count > 1 { Err(ErrorKind::NonVectorFieldError)? };
                 if msg.inner.type_ == $tibrv_flag as u8 {
                     let val = unsafe { msg.inner.data.$local };
                     let decoded: $base_type = val.into();
                     Ok(decoded)
                 } else {
-                    Err("Mismatched message type flag")
+                    Err(ErrorKind::FieldTypeError)?
                 }
             }
         }
@@ -199,9 +200,9 @@ macro_rules! array_encodable {
         }
 
         impl<'a> Decodable for &'a [$base_type] {
-            fn tibrv_try_decode(msg: &MsgField) -> Result<&'a [$base_type], &'static str> {
+            fn tibrv_try_decode(msg: &MsgField) -> Result<&'a [$base_type], TibrvError> {
                 if msg.inner.type_ != $tibrv_flag as u8 {
-                    Err("Mismatched message type flag")
+                    Err(ErrorKind::FieldTypeError)?
                 } else {
                     let buffer = unsafe { msg.inner.data.array };
                     let slice = unsafe { std::slice::from_raw_parts::<$base_type>(buffer as *const $base_type, msg.inner.count as usize) };
@@ -233,9 +234,9 @@ impl<'a> Encodable for &'a CStr {
 }
 
 impl<'a> Decodable for &'a CStr {
-    fn tibrv_try_decode(msg: &MsgField) -> Result<&'a CStr, &'static str> {
+    fn tibrv_try_decode(msg: &MsgField) -> Result<&'a CStr, TibrvError> {
         if msg.inner.type_ != TIBRVMSG_STRING as u8 {
-            Err("Mismatched message type flag")
+            Err(ErrorKind::FieldTypeError)?
         } else {
             let str_ptr = unsafe { msg.inner.data.str };
             let c_str = unsafe { CStr::from_ptr(str_ptr) };
@@ -265,9 +266,9 @@ impl<'a> Encodable for &'a Msg {
 }
 
 impl Decodable for BorrowedMsg {
-    fn tibrv_try_decode(msg: &MsgField) -> Result<Self, &'static str> {
+    fn tibrv_try_decode(msg: &MsgField) -> Result<Self, TibrvError> {
         if msg.inner.type_ != TIBRVMSG_MSG as u8 {
-            Err("Mismatched message type flag.")
+            Err(ErrorKind::FieldTypeError)?
         } else {
             let ptr = unsafe { msg.inner.data.msg };
             Ok(BorrowedMsg { inner: ptr })
@@ -335,16 +336,16 @@ pub fn tibrv_encode_port(port: &u16,
 }
 
 /// Try and decode an IP Port message field.
-pub fn tibrv_try_decode_port(msg: &MsgField) -> Result<u16, &'static str> {
+pub fn tibrv_try_decode_port(msg: &MsgField) -> Result<u16, TibrvError> {
     if msg.inner.count > 1 {
-        panic!("Attempt to decode array MsgField as Scalar");
+        Err(ErrorKind::NonVectorFieldError)?
     }
     if msg.inner.type_ == TIBRVMSG_IPPORT16 as u8 {
         let val = unsafe { msg.inner.data.ipport16 };
         let decoded = u16::from_be(val);
         Ok(decoded)
     } else {
-        Err("Mismatched message type flag")
+        Err(ErrorKind::FieldTypeError)?
     }
 }
 
@@ -375,11 +376,10 @@ pub unsafe fn tibrv_encode_opaque<'a, T: Copy>(slice: &'a [T],
 /// is lost (internally the slice is passed as `void*`).
 /// Therefore this function is approximately as unsafe as `std::mem::transmute`,
 /// except without the soft and fluffy blanket of size checking.
-pub unsafe fn tibrv_try_decode_opaque<T: Copy>
-    (msg: &MsgField)
-     -> Result<&[T], &'static str> {
+pub unsafe fn tibrv_try_decode_opaque<T: Copy>(msg: &MsgField)
+    -> Result<&[T], TibrvError> {
     if msg.inner.type_ != TIBRVMSG_OPAQUE as u8 {
-        Err("Mismatched message type flag")
+        Err(ErrorKind::FieldTypeError)?
     } else {
         assert!(!msg.inner.data.buf.is_null());
         // `size` in from_raw_parts is helpfully in 'elements' not bytes...

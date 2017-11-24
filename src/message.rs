@@ -3,9 +3,11 @@
 use std;
 use tibrv_sys::*;
 use field::*;
+use errors::*;
 use std::mem;
 use std::marker::PhantomData;
 use std::ffi::CString;
+use failure::ResultExt;
 
 /// A struct representing an owned Rendezvous Message.
 ///
@@ -19,22 +21,15 @@ pub struct Msg {
 
 impl Msg {
     /// Construct a new owned Rendezvous Message
-    pub fn new() -> Result<Self, &'static str> {
+    pub fn new() -> Result<Self, TibrvError> {
         let mut ptr: tibrvMsg = unsafe { mem::zeroed() };
-        let result = unsafe { tibrvMsg_Create(&mut ptr) };
-        match result {
-            tibrv_status::TIBRV_OK => Ok(Msg { inner: ptr }),
-            _ => Err("Error!"),
-        }
+        unsafe { tibrvMsg_Create(&mut ptr) }.and_then(|_| Msg { inner: ptr })
     }
 
-    pub fn try_clone(&self) -> Result<Self, &'static str> {
+    pub fn try_clone(&self) -> Result<Self, TibrvError> {
         let mut ptr: tibrvMsg = unsafe { mem::zeroed() };
-        let result = unsafe { tibrvMsg_CreateCopy(self.inner, &mut ptr) };
-        match result {
-            tibrv_status::TIBRV_OK => Ok(Msg { inner: ptr }),
-            _ => Err("Error!"),
-        }
+        unsafe { tibrvMsg_CreateCopy(self.inner, &mut ptr) }
+            .and_then(|_| Msg { inner: ptr })
     }
 
     /// Add a `MsgField` to this message.
@@ -46,13 +41,10 @@ impl Msg {
     /// The contents of message fields are always copied, therefore
     /// slice types must be `Copy`. A borrowed `MsgField` does not need
     /// to live beyond the point where it is added to the `Msg`.
-    pub fn add_field(&mut self,
-                     field: &mut MsgField)
-                     -> Result<&mut Self, &'static str> {
-        match unsafe { tibrvMsg_AddField(self.inner, &mut field.inner) } {
-            tibrv_status::TIBRV_OK => Ok(self),
-            _ => Err("Bork!"),
-        }
+    pub fn add_field(&mut self, field: &mut MsgField)
+        -> Result<&mut Self, TibrvError> {
+        unsafe { tibrvMsg_AddField(self.inner, &mut field.inner) }
+            .and_then(|_| self)
     }
 
     /// Get a specified field from this message.
@@ -61,10 +53,8 @@ impl Msg {
     /// is guaranteed to live at least as long as the parent `Msg`.
     ///
     /// This variant retrieves the field by name.
-    pub fn get_field_by_name<'a>
-        (&'a self,
-         name: &str)
-         -> Result<BorrowedMsgField<'a>, &'static str> {
+    pub fn get_field_by_name<'a>(&'a self, name: &str)
+         -> Result<BorrowedMsgField<'a>, TibrvError> {
         self.get_field(Some(name), None)
     }
 
@@ -74,42 +64,34 @@ impl Msg {
     /// is guaranteed to live at least as long as the parent `Msg`.
     ///
     /// This variant retrieves the field by id.
-    pub fn get_field_by_id<'a>
-        (&'a self,
-         id: u32)
-         -> Result<BorrowedMsgField<'a>, &'static str> {
+    pub fn get_field_by_id<'a>(&'a self, id: u32)
+         -> Result<BorrowedMsgField<'a>, TibrvError> {
         self.get_field(None, Some(id))
     }
 
-    fn get_field<'a>(&'a self,
-                     name: Option<&str>,
-                     id: Option<u32>)
-                     -> Result<BorrowedMsgField<'a>, &'static str> {
+    fn get_field<'a>(&'a self, name: Option<&str>, id: Option<u32>)
+        -> Result<BorrowedMsgField<'a>, TibrvError> {
         assert_ne!(name.is_some(), id.is_some(),
                 "One of id or name must be provided.");
         let mut field: tibrvMsgField = unsafe { mem::zeroed() };
-        let field_name = name.map_or(None, |s| Some(CString::new(s).unwrap()));
+        let field_name = name.map(|s| CString::new(s)
+            .context(ErrorKind::StrContentError))
+            .map_or(Ok(None), |n| n.map(Some))?;
+
         let name_ptr = field_name.as_ref()
                        .map_or(std::ptr::null(), |s| s.as_ptr());
-        let result = unsafe {
-            tibrvMsg_GetFieldEx(self.inner,
-                                name_ptr,
-                                &mut field,
+        unsafe {
+            tibrvMsg_GetFieldEx(self.inner, name_ptr, &mut field,
                                 id.unwrap_or(0) as tibrv_u16)
-        };
-        match result {
-            tibrv_status::TIBRV_OK => {
-                Ok(BorrowedMsgField {
-                    inner: MsgField {
-                        name: field_name,
-                        inner: field,
-                    },
-                    phantom: PhantomData,
-                })
+        }.and_then(|_|
+            BorrowedMsgField {
+                inner: MsgField {
+                    name: field_name,
+                    inner: field,
+                },
+                phantom: PhantomData,
             }
-            _ => Err("Bork!"),
-        }
-
+        )
     }
 
     /// Remove a specified field from this message.
@@ -118,7 +100,7 @@ impl Msg {
     /// is guaranteed to live at least as long as the parent `Msg`.
     ///
     /// This variant retrieves the field by name.
-    pub fn remove_field_by_name(&self, name: &str) -> Result<(), &'static str> {
+    pub fn remove_field_by_name(&self, name: &str) -> Result<(), TibrvError> {
         self.remove_field(Some(name), None)
     }
 
@@ -128,36 +110,30 @@ impl Msg {
     /// is guaranteed to live at least as long as the parent `Msg`.
     ///
     /// This variant retrieves the field by id.
-    pub fn remove_field_by_id(&self, id: u32) -> Result<(), &'static str> {
+    pub fn remove_field_by_id(&self, id: u32) -> Result<(), TibrvError> {
         self.remove_field(None, Some(id))
     }
 
-    fn remove_field(&self,
-                    name: Option<&str>,
-                    id: Option<u32>)
-                    -> Result<(), &'static str> {
+    fn remove_field(&self, name: Option<&str>, id: Option<u32>)
+        -> Result<(), TibrvError> {
         assert_ne!(name.is_some(), id.is_some(),
                    "One of id or name must be provided.");
-        let field_name = CString::new(name.unwrap_or("")).unwrap();
-        let name_ptr = name.map_or(std::ptr::null(), |_| field_name.as_ptr());
-        let result = unsafe {
-            tibrvMsg_RemoveFieldEx(self.inner, name_ptr, id.unwrap_or(0) as u16)
-        };
+        let field_name = name.map(|s| CString::new(s)
+            .context(ErrorKind::StrContentError))
+            .map_or(Ok(None), |n| n.map(Some))?;
 
-        match result {
-            tibrv_status::TIBRV_OK => Ok(()),
-            _ => Err("Bork!"),
-        }
+        let name_ptr = field_name.as_ref()
+            .map_or(std::ptr::null(), |m| m.as_ptr());
+        unsafe {
+            tibrvMsg_RemoveFieldEx(self.inner, name_ptr, id.unwrap_or(0) as u16)
+        }.and_then(|_| ())
     }
 
     /// Get the number of fields within this message.
-    pub fn num_fields(&mut self) -> Result<u32, &'static str> {
+    pub fn num_fields(&mut self) -> Result<u32, TibrvError> {
         let mut ptr: tibrv_u32 = unsafe { mem::zeroed() };
-        let result = unsafe { tibrvMsg_GetNumFields(self.inner, &mut ptr) };
-        match result {
-            tibrv_status::TIBRV_OK => Ok(ptr as u32),
-            _ => Err("Bork!"),
-        }
+        unsafe { tibrvMsg_GetNumFields(self.inner, &mut ptr) }
+            .and_then(|_| ptr as u32)
     }
 
     /// Expand the internal storage of a message.
@@ -166,37 +142,30 @@ impl Msg {
     /// overflow the available space, however if adding a large
     /// number of fields it may be useful to preallocate enough
     /// space to hold them all.
-    pub fn expand(&mut self, amount: i32) -> Result<&mut Self, &'static str> {
-        match unsafe { tibrvMsg_Expand(self.inner, amount as tibrv_i32) } {
-            tibrv_status::TIBRV_OK => Ok(self),
-            _ => Err("Bork!"),
-        }
+    pub fn expand(&mut self, amount: i32) -> Result<&mut Self, TibrvError> {
+        unsafe { tibrvMsg_Expand(self.inner, amount as tibrv_i32) }
+            .and_then(|_| self)
     }
 
     /// Get the size of the message (in bytes).
     ///
     /// Does not include space allocated but not yet used.
-    pub fn byte_size(&self) -> Result<u32, &'static str> {
+    pub fn byte_size(&self) -> Result<u32, TibrvError> {
         let mut ptr: tibrv_u32 = unsafe { mem::zeroed() };
-        match unsafe { tibrvMsg_GetByteSize(self.inner, &mut ptr) } {
-            tibrv_status::TIBRV_OK => Ok(ptr as u32),
-            _ => Err("Bork!"),
-        }
+        unsafe { tibrvMsg_GetByteSize(self.inner, &mut ptr) }
+            .and_then(|_| ptr as u32)
     }
 
     /// Set the send subject for the message.
     ///
     /// No wildcards are permitted in sender subjects.
     pub fn set_send_subject(&mut self, subject: &str)
-        -> Result<(), &'static str> {
-        let subject_c = CString::new(subject).map_err(|_| "Bork!")?;
-        let result = unsafe {
+        -> Result<(), TibrvError> {
+        let subject_c = CString::new(subject)
+            .context(ErrorKind::StrContentError)?;
+        unsafe {
             tibrvMsg_SetSendSubject(self.inner, subject_c.as_ptr())
-        };
-        match result {
-            tibrv_status::TIBRV_OK => Ok(()),
-            _ => Err("Bork!"),
-        }
+        }.and_then(|_| ())
     }
 }
 
@@ -227,26 +196,19 @@ impl BorrowedMsg {
     /// any supplementary information attached to the message.
     ///
     /// This function is effectively an allocate and copy.
-    pub fn to_owned(&self) -> Result<Msg, &'static str> {
+    pub fn to_owned(&self) -> Result<Msg, TibrvError> {
         let mut ptr: tibrvMsg = unsafe { mem::zeroed() };
-        let result = unsafe { tibrvMsg_CreateCopy(self.inner, &mut ptr) };
-        match result {
-            tibrv_status::TIBRV_OK => Ok(Msg { inner: ptr }),
-            _ => Err("Error!"),
-        }
+        unsafe { tibrvMsg_CreateCopy(self.inner, &mut ptr) }
+            .and_then(|_| Msg { inner: ptr })
     }
 
     /// Detach an inbound message from Rendezvous storage.
     ///
     /// This function is unsafe, as it is only valid for messages
     /// received in a callback invoked from Rendezvous.
-    pub unsafe fn detach(self) -> Result<Msg, &'static str> {
+    pub unsafe fn detach(self) -> Result<Msg, TibrvError> {
         let ptr = self.inner;
-        let result = tibrvMsg_Detach(ptr);
-        match result {
-            tibrv_status::TIBRV_OK => Ok(Msg { inner: ptr }),
-            _ => Err("Error!"),
-        }
+        tibrvMsg_Detach(ptr).and_then(|_| Msg { inner: ptr })
     }
 }
 

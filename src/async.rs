@@ -21,6 +21,8 @@ use futures::{Async, Poll};
 use event::{Queue, Subscription};
 use context::{RvCtx, Transport};
 use message::Msg;
+use errors::*;
+use failure::*;
 
 /// Struct representing an asynchronous Rendezvous event queue.
 ///
@@ -33,7 +35,7 @@ pub struct AsyncQueue<'a> {
 
 impl<'a> AsyncQueue<'a> {
     /// Construct a new asynchronous event queue.
-    pub fn new(ctx: &'a RvCtx) -> Result<Self, &'static str> {
+    pub fn new(ctx: &'a RvCtx) -> Result<Self, TibrvError> {
         Ok(AsyncQueue {
             queue: Queue::new(ctx)?,
             listeners: Arc::new(Mutex::new(Vec::new())),
@@ -73,9 +75,14 @@ impl<'a> AsyncQueue<'a> {
     /// Sets up the channels as in a synchronous subscription and returns
     /// an `AsyncSub` stream.
     pub fn subscribe(&self, handle: &Handle, tp: &Transport, subject: &str)
-                     -> Result<AsyncSub, &'static str> {
+        -> Result<AsyncSub, TibrvError> {
         let (registration, ready) = mio::Registration::new2();
-        let mut listeners = self.listeners.lock().map_err(|_| "Bork!")?;
+
+        // This shouldn't ever fail, if it does, something panic-worthy has
+        // gone wrong.
+        let mut listeners = self.listeners.lock()
+            .expect("Couldn't lock async channel notifier list!");
+
         listeners.push(ready);
         let sub = self.queue.subscribe(tp, subject)?;
 
@@ -91,12 +98,13 @@ impl<'a> AsyncQueue<'a> {
                 )
             };
             if result != tibrv_status::TIBRV_OK {
-                return Err("Bork!");
+                Err(ErrorKind::AsyncRegError)?;
             };
         }
         Ok(AsyncSub {
             sub: sub,
-            io: PollEvented::new(registration, handle).map_err(|_| "Bork!")?,
+            io: PollEvented::new(registration, handle)
+                .context(ErrorKind::AsyncRegError)?,
         })
     }
 }

@@ -6,6 +6,8 @@ use std::ffi::CString;
 use std::sync::mpsc;
 use context::{RvCtx, Transport};
 use message::{Msg, BorrowedMsg};
+use errors::*;
+use failure::*;
 use std::marker::PhantomData;
 
 unsafe extern "C" fn sync_callback(_event: tibrvEvent,
@@ -35,30 +37,20 @@ pub struct Queue<'a> {
 }
 
 impl<'a> Queue<'a> {
-    /// Constructs a new event queue. 
+    /// Constructs a new event queue.
     ///
     /// The supplied `RvCtx` must live at least as long as any created
     /// queues.
-    pub fn new(_ctx: &'a RvCtx) -> Result<Self, &'static str> {
+    pub fn new(_ctx: &'a RvCtx) -> Result<Self, TibrvError> {
         let mut ptr: tibrvQueue = unsafe { mem::zeroed() };
-        match unsafe { tibrvQueue_Create(&mut ptr) } {
-            tibrv_status::TIBRV_OK => Ok(
-                Queue {
-                    inner: ptr,
-                    phantom: PhantomData,
-                }
-            ),
-            _ => Err("Bork!"),
-        }
+        unsafe { tibrvQueue_Create(&mut ptr) }
+            .and_then(|_| Queue { inner: ptr, phantom: PhantomData })
     }
 
     /// Get the number of events waiting in the queue.
-    pub fn count(&self) -> Result<u32, &'static str> {
+    pub fn count(&self) -> Result<u32, TibrvError> {
         let mut ptr: u32 = 0;
-        match unsafe { tibrvQueue_GetCount(self.inner, &mut ptr) } {
-            tibrv_status::TIBRV_OK => Ok(ptr),
-            _ => Err("Bork!"),
-        }
+        unsafe { tibrvQueue_GetCount(self.inner, &mut ptr) }.and_then(|_| ptr)
     }
 
     /// Subscribe to a message subject.
@@ -71,25 +63,27 @@ impl<'a> Queue<'a> {
     /// Subject must be valid ASCII, wildcards are accepted, although
     /// a wildcard-only subject is not.
     pub fn subscribe(&self, tp: &Transport, subject: &str)
-        -> Result<Subscription, &'static str>  {
-            let (send, recv) = mpsc::channel();
-            let subject_c = CString::new(subject).map_err(|_| "Bork!")?;
-            let mut ptr: tibrvEvent = unsafe { mem::zeroed() };
-            let send_ptr = Box::into_raw(Box::new(send.clone()));
-            let result = unsafe {
-                tibrvEvent_CreateListener(
-                    &mut ptr,
-                    self.inner,
-                    Some(sync_callback),
-                    tp.inner,
-                    subject_c.as_ptr(),
-                    send_ptr as *const ::std::os::raw::c_void
-                    )
-            };
-            if result != tibrv_status::TIBRV_OK {
-                return Err("Bork!");
-            };
-            Ok(Subscription { event: ptr, queue: self, channel: recv })
+        -> Result<Subscription, TibrvError>  {
+        let (send, recv) = mpsc::channel();
+        let subject_c = CString::new(subject)
+            .context(ErrorKind::StrContentError)?;
+
+        let mut ptr: tibrvEvent = unsafe { mem::zeroed() };
+        let send_ptr = Box::into_raw(Box::new(send.clone()));
+        unsafe {
+            tibrvEvent_CreateListener(
+                &mut ptr,
+                self.inner,
+                Some(sync_callback),
+                tp.inner,
+                subject_c.as_ptr(),
+                send_ptr as *const ::std::os::raw::c_void
+                )
+        }.and_then(|_| Subscription {
+            event: ptr,
+            queue: self,
+            channel: recv
+        })
     }
 
 }
@@ -114,30 +108,27 @@ pub struct Subscription<'a> {
 
 impl<'a> Subscription<'a> {
     // Blocking dispatch
-    fn dispatch(&self) -> Result<(), &'static str> {
-        match unsafe { tibrvQueue_TimedDispatch(self.queue.inner, -1.0) } {
-            tibrv_status::TIBRV_OK => Ok(()),
-            _ => Err("Bork!"),
-        }
+    fn dispatch(&self) -> Result<(), TibrvError> {
+        unsafe { tibrvQueue_TimedDispatch(self.queue.inner, -1.0) }
+            .and_then(|_| ())
     }
 
     // Non blocking try-dispatch.
-    fn poll(&self) -> Result<(), &'static str> {
-        match unsafe { tibrvQueue_TimedDispatch(self.queue.inner, 0.0) } {
-            tibrv_status::TIBRV_OK => Ok(()),
-            _ => Err("No messages enqueued."),
-        }
+    fn poll(&self) -> Result<(), TibrvError> {
+        unsafe { tibrvQueue_TimedDispatch(self.queue.inner, 0.0) }
+            .and_then(|_| ())
     }
 
     /// Get the next message available on this subscription.
     ///
     /// Blocks until a message is available in the queue.
-    pub fn next(&self) -> Result<Msg, &'static str> {
+    pub fn next(&self) -> Result<Msg, TibrvError> {
         if let Ok(m) = self.channel.try_recv() {
             return Ok(m)
         }
         self.dispatch()?;
-        self.channel.recv().map_err(|_| "Bork!")
+        self.channel.recv().context(ErrorKind::QueueError)
+            .map_err(|e| TibrvError::from(e))
     }
 
     pub fn try_next(&self) -> Result<Msg, mpsc::TryRecvError> {
@@ -159,7 +150,7 @@ impl<'a> Drop for Subscription<'a> {
 
 #[cfg(test)]
 mod tests {
-    use context::RvCtx;
+    use context::{RvCtx, TransportBuilder};
     use event::Queue;
 
     #[test]
@@ -170,13 +161,13 @@ mod tests {
         assert_eq!(0, queue.unwrap().count().unwrap());
     }
 
-    //#[ignore] // Requires a running rvd
-    //#[test]
-    //fn subscribe() {
-    //    let ctx = RvCtx::new().unwrap();
-    //    let queue = ctx.queue().unwrap();
-    //    let tp = ctx.transport().create().unwrap();
-    //    let sub = queue.subscribe(&tp, "TEST");
-    //    assert!(sub.is_ok());
-    //}
+    #[ignore] // Requires a running rvd
+    #[test]
+    fn subscribe() {
+        let ctx = RvCtx::new().unwrap();
+        let queue = Queue::new(&ctx).unwrap();
+        let tp = TransportBuilder::new(&ctx).create().unwrap();
+        let sub = queue.subscribe(&tp, "TEST");
+        assert!(sub.is_ok());
+    }
 }
