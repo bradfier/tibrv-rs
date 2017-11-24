@@ -2,15 +2,16 @@
 
 use tibrv_sys::*;
 use message::Msg;
-use std::ffi::{CString,CStr};
+use errors::*;
+use std::ffi::{CStr, CString};
 use std::marker::PhantomData;
 use std::ptr::null;
+use failure::*;
 
 #[cfg(feature = "tokio")]
-use futures::prelude::{Sink, Async, AsyncSink, StartSend, Poll};
+use futures::prelude::{Async, AsyncSink, Poll, Sink, StartSend};
 #[cfg(feature = "tokio")]
 use std::io;
-
 
 /// A struct representing a Rendezvous transport object.
 ///
@@ -73,25 +74,28 @@ impl<'a> TransportBuilder<'a> {
         }
     }
     /// Sets the `service` parameter.
-    pub fn with_service(mut self, service: &str) -> Result<Self, &'static str> {
-        self.service = Some(CString::new(service).map_err(|_| "Bork!")?);
+    pub fn with_service(mut self, service: &str) -> Result<Self, TibrvError> {
+        self.service =
+            Some(CString::new(service).context(ErrorKind::StrContentError)?);
         Ok(self)
     }
 
     /// Sets the `daemon` parameter.
-    pub fn with_daemon(mut self, daemon: &str) -> Result<Self, &'static str> {
-        self.daemon = Some(CString::new(daemon).map_err(|_| "Bork!")?);
+    pub fn with_daemon(mut self, daemon: &str) -> Result<Self, TibrvError> {
+        self.daemon =
+            Some(CString::new(daemon).context(ErrorKind::StrContentError)?);
         Ok(self)
     }
 
     /// Sets the `network` parameter.
-    pub fn with_network(mut self, network: &str) -> Result<Self, &'static str> {
-        self.network = Some(CString::new(network).map_err(|_| "Bork!")?);
+    pub fn with_network(mut self, network: &str) -> Result<Self, TibrvError> {
+        self.network =
+            Some(CString::new(network).context(ErrorKind::StrContentError)?);
         Ok(self)
     }
 
     /// Consumes the `TransportBuilder`, creating a `Transport`.
-    pub fn create(self) -> Result<Transport<'a>, &'static str> {
+    pub fn create(self) -> Result<Transport<'a>, TibrvError> {
         // 0 is a bogus value, but we need to convince the compiler transport
         // will actually be initialized by _Create
         let mut transport: tibrvTransport = 0;
@@ -101,34 +105,24 @@ impl<'a> TransportBuilder<'a> {
                 &mut transport,
                 self.service.map_or(null(), |s| s.as_ptr()),
                 self.network.map_or(null(), |n| n.as_ptr()),
-                self.daemon.map_or(null(), |d| d.as_ptr())
+                self.daemon.map_or(null(), |d| d.as_ptr()),
             )
         };
-
-        match result {
-            tibrv_status::TIBRV_OK => Ok(
-                Transport {
-                    inner: transport,
-                    phantom: PhantomData,
-                }
-            ),
-            _ => Err("Bork!"),
-        }
+        result.and_then(|_| Transport {
+            inner: transport,
+            phantom: PhantomData,
+        })
     }
 }
 
-
 /// A struct representing the Rendezvous internal machinery which must be
-/// set up before attempting to create `Transports` or `Queues` 
-pub struct RvCtx { }
+/// set up before attempting to create `Transports` or `Queues`
+pub struct RvCtx {}
 
 impl RvCtx {
     /// Initialize the Rendezvous context
-    pub fn new() -> Result<Self, &'static str> {
-        match unsafe { tibrv_Open() } {
-            tibrv_status::TIBRV_OK => Ok(RvCtx { }),
-            _ => Err("Bork!"),
-        }
+    pub fn new() -> Result<Self, TibrvError> {
+        unsafe { tibrv_Open() }.and_then(|_| RvCtx {})
     }
 
     /// Get the version of Rendezvous this context has bound to.
@@ -149,62 +143,40 @@ impl Drop for RvCtx {
     }
 }
 
-
 impl<'a> Transport<'a> {
     /// Extract the daemon parameter from the transport.
-    pub fn daemon(&self) -> Result<String, &'static str> {
-        let mut ptr: *const ::std::os::raw::c_char
-            = unsafe { ::std::mem::zeroed() };
+    pub fn daemon(&self) -> Result<String, TibrvError> {
+        let mut ptr: *const ::std::os::raw::c_char =
+            unsafe { ::std::mem::zeroed() };
 
-        let result = unsafe {
-            tibrvTransport_GetDaemon(self.inner, &mut ptr)
-        };
-
-        match result {
-            tibrv_status::TIBRV_OK => Ok(
-                unsafe {
-                    CStr::from_ptr(ptr).to_string_lossy().into_owned()
-                }
-            ),
-            _ => Err("Bork!"),
+        unsafe {
+            tibrvTransport_GetDaemon(self.inner, &mut ptr).and_then(|_| {
+                CStr::from_ptr(ptr).to_string_lossy().into_owned()
+            })
         }
     }
 
     /// Extract the network parameter from the transport.
-    pub fn network(&self) -> Result<String, &'static str> {
-        let mut ptr: *const ::std::os::raw::c_char
-            = unsafe { ::std::mem::zeroed() };
+    pub fn network(&self) -> Result<String, TibrvError> {
+        let mut ptr: *const ::std::os::raw::c_char =
+            unsafe { ::std::mem::zeroed() };
 
-        let result = unsafe {
-            tibrvTransport_GetNetwork(self.inner, &mut ptr)
-        };
-
-        match result {
-            tibrv_status::TIBRV_OK => Ok(
-                unsafe {
-                    CStr::from_ptr(ptr).to_string_lossy().into_owned()
-                }
-            ),
-            _ => Err("Bork!"),
+        unsafe {
+            tibrvTransport_GetNetwork(self.inner, &mut ptr).and_then(|_| {
+                CStr::from_ptr(ptr).to_string_lossy().into_owned()
+            })
         }
     }
 
     /// Extract the service parameter from the transport.
-    pub fn service(&self) -> Result<String, &'static str> {
-        let mut ptr: *const ::std::os::raw::c_char
-            = unsafe { ::std::mem::zeroed() };
+    pub fn service(&self) -> Result<String, TibrvError> {
+        let mut ptr: *const ::std::os::raw::c_char =
+            unsafe { ::std::mem::zeroed() };
 
-        let result = unsafe {
-            tibrvTransport_GetService(self.inner, &mut ptr)
-        };
-
-        match result {
-            tibrv_status::TIBRV_OK => Ok(
-                unsafe {
-                    CStr::from_ptr(ptr).to_string_lossy().into_owned()
-                }
-            ),
-            _ => Err("Bork!"),
+        unsafe {
+            tibrvTransport_GetService(self.inner, &mut ptr).and_then(|_| {
+                CStr::from_ptr(ptr).to_string_lossy().into_owned()
+            })
         }
     }
 
@@ -212,11 +184,8 @@ impl<'a> Transport<'a> {
     ///
     /// Note that `Msg` must be mutable due to the signature
     /// of the C library functions.
-    pub fn send(&self, msg: &mut Msg) -> Result<(), &'static str> {
-        match unsafe { tibrvTransport_Send(self.inner, msg.inner) } {
-            tibrv_status::TIBRV_OK => Ok(()),
-            _ => Err("Bork!"),
-        }
+    pub fn send(&self, msg: &mut Msg) -> Result<(), TibrvError> {
+        unsafe { tibrvTransport_Send(self.inner, msg.inner) }.and_then(|_| ())
     }
 }
 
@@ -250,7 +219,6 @@ impl<'a> Sink for Transport<'a> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -259,5 +227,12 @@ mod tests {
     fn version() {
         let ctx = RvCtx::new().unwrap();
         assert!(ctx.version().len() > 0);
+    }
+
+    #[test]
+    fn default_transport() {
+        let ctx = RvCtx::new().unwrap();
+        let tp = TransportBuilder::new(&ctx).create();
+        let _ = tp.map_err(|e| assert_eq!(ErrorKind::TransportError, e.kind()));
     }
 }

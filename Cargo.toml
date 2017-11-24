@@ -19,6 +19,8 @@ travis-ci = { repository = "bradfier/tibrv-rs" }
 
 [dependencies]
 chrono = "0.4"
+failure = "^0.1"
+failure_derive = "^0.1"
 tibrv-sys = { version = "0.1", path = "tibrv-sys" }
 tokio-core = { version = "0.1.10", optional = true }
 mio = { version = "0.6.10", optional = true }

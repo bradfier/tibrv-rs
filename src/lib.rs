@@ -96,6 +96,8 @@
 
 extern crate tibrv_sys;
 extern crate chrono;
+extern crate failure;
+#[macro_use] extern crate failure_derive;
 
 #[cfg(feature = "tokio")]
 extern crate mio;
@@ -105,6 +107,8 @@ extern crate futures;
 #[macro_use]
 extern crate tokio_core;
 
+#[macro_use]
+pub mod errors;
 
 pub mod field;
 pub mod message;
@@ -151,22 +155,22 @@ mod tests {
     // "TEST" subject with the "DATA" field populated with a string.
     // You can use the `tibrvsend` binary in the Rendezvous distribution
     // to accomplish this.
-    #[test]
-    #[ignore]
-    fn recv_msg() {
-        use event::Queue;
-        use context::{RvCtx, TransportBuilder};
-        use field::Decodable;
-        use std::ffi::CStr;
+    //#[test]
+    //#[ignore]
+    //fn recv_msg() {
+    //    use event::Queue;
+    //    use context::{RvCtx, TransportBuilder};
+    //    use field::Decodable;
+    //    use std::ffi::CStr;
 
-        let ctx = RvCtx::new().expect("Couldn't create RV machinery");
+    //    let ctx = RvCtx::new().expect("Couldn't create RV machinery");
 
-        let tp = TransportBuilder::new(&ctx).create().expect("Couldn't create transport");
-        let q = Queue::new(&ctx).expect("Couldn't create queue");
-        let sub = q.subscribe(&tp, "TEST").expect("Couldn't register subscription");
-        let msg = sub.next().expect("Couldn't get next message.");
-        let field = msg.get_field_by_name("DATA").expect("Couldn't find DATA Field");
-        let data = <&CStr>::tibrv_try_decode(&field);
-        assert!(data.is_ok());
-    }
+    //    let tp = TransportBuilder::new(&ctx).create().expect("Couldn't create transport");
+    //    let q = Queue::new(&ctx).expect("Couldn't create queue");
+    //    let sub = q.subscribe(&tp, "TEST").expect("Couldn't register subscription");
+    //    let msg = sub.next().expect("Couldn't get next message.");
+    //    let field = msg.get_field_by_name("DATA").expect("Couldn't find DATA Field");
+    //    let data = <&CStr>::tibrv_try_decode(&field);
+    //    assert!(data.is_ok());
+    //}
 }
