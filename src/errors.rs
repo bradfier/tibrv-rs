@@ -6,7 +6,8 @@ use failure::*;
 
 pub(crate) trait TibrvResult {
     fn and_then<U, F: FnOnce(Self) -> U>(self, f: F) -> Result<U, TibrvError>
-        where Self: Sized;
+    where
+        Self: Sized;
 }
 
 /// The error type for operations on the types provided in this crate.
@@ -77,7 +78,9 @@ impl TibrvError {
 
 impl From<ErrorKind> for TibrvError {
     fn from(kind: ErrorKind) -> TibrvError {
-        TibrvError { inner: Context::new(kind) }
+        TibrvError {
+            inner: Context::new(kind),
+        }
     }
 }
 
@@ -96,8 +99,7 @@ impl From<tibrv_status> for ErrorKind {
             | tibrv_status::TIBRV_SERVICE_NOT_FOUND
             | tibrv_status::TIBRV_NETWORK_NOT_FOUND
             | tibrv_status::TIBRV_DAEMON_NOT_FOUND
-            | tibrv_status::TIBRV_DAEMON_NOT_CONNECTED
-            => ErrorKind::TransportError,
+            | tibrv_status::TIBRV_DAEMON_NOT_CONNECTED => ErrorKind::TransportError,
             _ => ErrorKind::UnknownError(status),
         }
     }

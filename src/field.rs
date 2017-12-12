@@ -6,7 +6,7 @@
 
 use tibrv_sys::*;
 use errors::*;
-use message::{Msg, BorrowedMsg};
+use message::{BorrowedMsg, Msg};
 use std::ffi::{CStr, CString};
 use chrono::NaiveDateTime;
 use std::net::Ipv4Addr;
@@ -43,7 +43,8 @@ impl<'a> Deref for BorrowedMsgField<'a> {
 
 /// A builder for `MsgField`.
 pub struct Builder<'a, T: 'a>
-    where T: Encodable
+where
+    T: Encodable,
 {
     name: Option<&'a str>,
     id: Option<u32>,
@@ -51,7 +52,8 @@ pub struct Builder<'a, T: 'a>
 }
 
 impl<'a, T> Builder<'a, T>
-    where T: Encodable
+where
+    T: Encodable,
 {
     /// Creates a new `Builder` used to construct a `MsgField`.o
     ///
@@ -131,9 +133,11 @@ pub trait Decodable {
     /// but this method may fail if the sending party incorrectly encodes
     /// the data fields.
     fn tibrv_try_decode(msg: &MsgField) -> Result<Self, TibrvError>
-        where Self: Sized;
+    where
+        Self: Sized;
 }
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 macro_rules! must_name {
     ($name:ident, $id:ident) => (
         if $id.is_some() {
@@ -142,6 +146,7 @@ macro_rules! must_name {
     )
 }
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 macro_rules! encodable {
     ($base_type:ty, $tibrv_type:tt, $local:ident, $tibrv_flag:expr) => (
         impl Encodable for $base_type {
@@ -178,6 +183,7 @@ macro_rules! encodable {
     )
 }
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 macro_rules! array_encodable {
     ($base_type:ty, $tibrv_flag:expr) => (
         impl<'a> Encodable for &'a [$base_type] {
@@ -276,7 +282,6 @@ impl Decodable for BorrowedMsg {
     }
 }
 
-
 // Integers
 encodable!(u8, tibrv_u8, u8, TIBRVMSG_U8);
 encodable!(i8, tibrv_i8, i8, TIBRVMSG_I8);
@@ -315,10 +320,7 @@ encodable!(Ipv4Addr, tibrv_ipaddr32, ipaddr32, TIBRVMSG_IPADDR32);
 ///
 /// Since we already provide an Impl for 'normal' `u16` this function will
 /// encode using the special byte ordering.
-pub fn tibrv_encode_port(port: &u16,
-                         name: Option<&str>,
-                         id: Option<u32>)
-                         -> MsgField {
+pub fn tibrv_encode_port(port: &u16, name: Option<&str>, id: Option<u32>) -> MsgField {
     must_name!(name, id);
     let name_cstr = name.map_or(None, |s| Some(CString::new(s).unwrap()));
     let ptr = name_cstr.as_ref().map_or(std::ptr::null(), |s| s.as_ptr());
@@ -328,7 +330,9 @@ pub fn tibrv_encode_port(port: &u16,
             name: ptr,
             size: std::mem::size_of::<u16>() as tibrv_u32,
             count: 1 as tibrv_u32,
-            data: tibrvLocalData { ipport16: port.to_be() },
+            data: tibrvLocalData {
+                ipport16: port.to_be(),
+            },
             id: id.unwrap_or(0) as tibrv_u16,
             type_: TIBRVMSG_IPPORT16 as tibrv_u8,
         },
@@ -350,10 +354,11 @@ pub fn tibrv_try_decode_port(msg: &MsgField) -> Result<u16, TibrvError> {
 }
 
 /// Encode a slice as an opaque byte sequence.
-pub unsafe fn tibrv_encode_opaque<'a, T: Copy>(slice: &'a [T],
-                                               name: Option<&str>,
-                                               id: Option<u32>)
-                                               -> MsgField {
+pub unsafe fn tibrv_encode_opaque<'a, T: Copy>(
+    slice: &'a [T],
+    name: Option<&str>,
+    id: Option<u32>,
+) -> MsgField {
     must_name!(name, id);
     let name_cstr = name.map_or(None, |s| Some(CString::new(s).unwrap()));
     let ptr = name_cstr.as_ref().map_or(std::ptr::null(), |s| s.as_ptr());
@@ -363,7 +368,9 @@ pub unsafe fn tibrv_encode_opaque<'a, T: Copy>(slice: &'a [T],
             name: ptr,
             size: std::mem::size_of_val(&slice) as tibrv_u32,
             count: 1 as tibrv_u32,
-            data: tibrvLocalData { buf: slice.as_ptr() as *const c_void },
+            data: tibrvLocalData {
+                buf: slice.as_ptr() as *const c_void,
+            },
             id: id.unwrap_or(0) as tibrv_u16,
             type_: TIBRVMSG_OPAQUE as tibrv_u8,
         },
@@ -376,16 +383,19 @@ pub unsafe fn tibrv_encode_opaque<'a, T: Copy>(slice: &'a [T],
 /// is lost (internally the slice is passed as `void*`).
 /// Therefore this function is approximately as unsafe as `std::mem::transmute`,
 /// except without the soft and fluffy blanket of size checking.
-pub unsafe fn tibrv_try_decode_opaque<T: Copy>(msg: &MsgField)
-    -> Result<&[T], TibrvError> {
+pub unsafe fn tibrv_try_decode_opaque<T: Copy>(
+    msg: &MsgField,
+) -> Result<&[T], TibrvError> {
     if msg.inner.type_ != TIBRVMSG_OPAQUE as u8 {
         Err(ErrorKind::FieldTypeError)?
     } else {
         assert!(!msg.inner.data.buf.is_null());
         // `size` in from_raw_parts is helpfully in 'elements' not bytes...
-        let elements: usize = msg.inner.size as usize /
-                              std::mem::size_of::<T>();
-        Ok(std::slice::from_raw_parts(msg.inner.data.buf as *const T, elements))
+        let elements: usize = msg.inner.size as usize / std::mem::size_of::<T>();
+        Ok(std::slice::from_raw_parts(
+            msg.inner.data.buf as *const T,
+            elements,
+        ))
     }
 }
 
@@ -428,12 +438,14 @@ mod tests {
         use chrono::prelude::*;
         let dt = NaiveDate::from_ymd(1970, 1, 1).and_hms_milli(1, 0, 0, 0);
         unsafe {
-            assert_eq!(dt.tibrv_encode(Some("DateTime"), Some(0))
-                           .inner
-                           .data
-                           .date
-                           .sec,
-                       3600);
+            assert_eq!(
+                dt.tibrv_encode(Some("DateTime"), Some(0))
+                    .inner
+                    .data
+                    .date
+                    .sec,
+                3600
+            );
         }
     }
 
@@ -494,10 +506,7 @@ mod tests {
     #[test]
     fn builder() {
         let data: &[u64] = &[1, 2, 3, 4, 5];
-        let field = Builder::new(&data)
-            .with_name("Name")
-            .with_id(4)
-            .encode();
+        let field = Builder::new(&data).with_name("Name").with_id(4).encode();
         assert_eq!(8, field.inner.size);
         assert_eq!(5, field.inner.count);
     }

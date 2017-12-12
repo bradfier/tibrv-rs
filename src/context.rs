@@ -75,22 +75,19 @@ impl<'a> TransportBuilder<'a> {
     }
     /// Sets the `service` parameter.
     pub fn with_service(mut self, service: &str) -> Result<Self, TibrvError> {
-        self.service =
-            Some(CString::new(service).context(ErrorKind::StrContentError)?);
+        self.service = Some(CString::new(service).context(ErrorKind::StrContentError)?);
         Ok(self)
     }
 
     /// Sets the `daemon` parameter.
     pub fn with_daemon(mut self, daemon: &str) -> Result<Self, TibrvError> {
-        self.daemon =
-            Some(CString::new(daemon).context(ErrorKind::StrContentError)?);
+        self.daemon = Some(CString::new(daemon).context(ErrorKind::StrContentError)?);
         Ok(self)
     }
 
     /// Sets the `network` parameter.
     pub fn with_network(mut self, network: &str) -> Result<Self, TibrvError> {
-        self.network =
-            Some(CString::new(network).context(ErrorKind::StrContentError)?);
+        self.network = Some(CString::new(network).context(ErrorKind::StrContentError)?);
         Ok(self)
     }
 
@@ -150,9 +147,8 @@ impl<'a> Transport<'a> {
             unsafe { ::std::mem::zeroed() };
 
         unsafe {
-            tibrvTransport_GetDaemon(self.inner, &mut ptr).and_then(|_| {
-                CStr::from_ptr(ptr).to_string_lossy().into_owned()
-            })
+            tibrvTransport_GetDaemon(self.inner, &mut ptr)
+                .and_then(|_| CStr::from_ptr(ptr).to_string_lossy().into_owned())
         }
     }
 
@@ -162,9 +158,8 @@ impl<'a> Transport<'a> {
             unsafe { ::std::mem::zeroed() };
 
         unsafe {
-            tibrvTransport_GetNetwork(self.inner, &mut ptr).and_then(|_| {
-                CStr::from_ptr(ptr).to_string_lossy().into_owned()
-            })
+            tibrvTransport_GetNetwork(self.inner, &mut ptr)
+                .and_then(|_| CStr::from_ptr(ptr).to_string_lossy().into_owned())
         }
     }
 
@@ -174,9 +169,8 @@ impl<'a> Transport<'a> {
             unsafe { ::std::mem::zeroed() };
 
         unsafe {
-            tibrvTransport_GetService(self.inner, &mut ptr).and_then(|_| {
-                CStr::from_ptr(ptr).to_string_lossy().into_owned()
-            })
+            tibrvTransport_GetService(self.inner, &mut ptr)
+                .and_then(|_| CStr::from_ptr(ptr).to_string_lossy().into_owned())
         }
     }
 
@@ -204,8 +198,10 @@ impl<'a> Sink for Transport<'a> {
     // From the documentation it looks like tibrvTransport_Send
     // isn't supposed to block, so we have to just assume it's
     // doing internal buffering.
-    fn start_send(&mut self, mut item: Msg)
-        -> StartSend<Self::SinkItem, Self::SinkError> {
+    fn start_send(
+        &mut self,
+        mut item: Msg,
+    ) -> StartSend<Self::SinkItem, Self::SinkError> {
         // Here we do the send immediately, then always return
         // complete when poll_complete is called later.
         Transport::send(self, &mut item).map_err(|_| {

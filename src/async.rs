@@ -14,7 +14,7 @@ use tibrv_sys::*;
 use std::io;
 use mio;
 use std::sync::{mpsc, Arc, Mutex};
-use tokio_core::reactor::{PollEvented, Handle};
+use tokio_core::reactor::{Handle, PollEvented};
 use futures::stream::Stream;
 use futures::{Async, Poll};
 
@@ -42,9 +42,10 @@ impl<'a> AsyncQueue<'a> {
         })
     }
 
-    unsafe extern "C" fn callback(_queue: tibrvQueue,
-                                  closure: *mut ::std::os::raw::c_void)
-                                  -> () {
+    unsafe extern "C" fn callback(
+        _queue: tibrvQueue,
+        closure: *mut ::std::os::raw::c_void,
+    ) -> () {
         // As with the sync version, we can't panic and unwind into the
         // caller, so we catch any recoverable panic and ignore it.
         let _ = ::std::panic::catch_unwind(move || {
@@ -74,13 +75,18 @@ impl<'a> AsyncQueue<'a> {
     ///
     /// Sets up the channels as in a synchronous subscription and returns
     /// an `AsyncSub` stream.
-    pub fn subscribe(&self, handle: &Handle, tp: &Transport, subject: &str)
-        -> Result<AsyncSub, TibrvError> {
+    pub fn subscribe(
+        &self,
+        handle: &Handle,
+        tp: &Transport,
+        subject: &str,
+    ) -> Result<AsyncSub, TibrvError> {
         let (registration, ready) = mio::Registration::new2();
 
         // This shouldn't ever fail, if it does, something panic-worthy has
         // gone wrong.
-        let mut listeners = self.listeners.lock()
+        let mut listeners = self.listeners
+            .lock()
             .expect("Couldn't lock async channel notifier list!");
 
         listeners.push(ready);
@@ -127,27 +133,26 @@ impl<'a> AsyncSub<'a> {
             // It's possible our queue was pushed into from another
             // event, so optimistically check for a message.
             if let Ok(msg) = self.sub.try_next() {
-                return Ok(msg)
+                return Ok(msg);
             }
             if let Async::NotReady = self.io.poll_read() {
-                return Err(io::Error::new(
-                        io::ErrorKind::WouldBlock, "not ready"
-                ))
+                return Err(io::Error::new(io::ErrorKind::WouldBlock, "not ready"));
             }
             match self.sub.try_next() {
                 Err(e) => {
                     if e == mpsc::TryRecvError::Empty {
                         self.io.need_read();
 
-                        return Err(
-                            io::Error::new(
-                                io::ErrorKind::WouldBlock, "no messages"
-                            )
-                        )
+                        return Err(io::Error::new(
+                            io::ErrorKind::WouldBlock,
+                            "no messages",
+                        ));
                     }
                     // Only other error from a Receiver is a broken stream
-                    return Err(io::Error::new(io::ErrorKind::BrokenPipe,
-                                              "channel closed"));
+                    return Err(io::Error::new(
+                        io::ErrorKind::BrokenPipe,
+                        "channel closed",
+                    ));
                 }
                 Ok(msg) => return Ok(msg),
             }
