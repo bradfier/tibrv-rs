@@ -1,6 +1,6 @@
 [package]
 name = "tibrv"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Richard Bradfield <bradfier@fstab.me>"]
 license = "MIT/Apache-2.0"
 readme = "README.md"
@@ -21,7 +21,7 @@ travis-ci = { repository = "bradfier/tibrv-rs" }
 chrono = "0.4"
 failure = "^0.1"
 failure_derive = "^0.1"
-tibrv-sys = { version = "0.1", path = "tibrv-sys" }
+tibrv-sys = { version = "0.2", path = "tibrv-sys" }
 tokio-core = { version = "0.1.10", optional = true }
 mio = { version = "0.6.10", optional = true }
 futures = { version = "0.1.16", optional = true }

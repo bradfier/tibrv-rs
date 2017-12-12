@@ -1,6 +1,6 @@
 [package]
 name = "tibrv-sys"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Richard Bradfield <bradfier@fstab.me>"]
 links = "tibrv"
 build = "build.rs"
