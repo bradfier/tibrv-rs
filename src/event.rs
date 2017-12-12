@@ -5,19 +5,20 @@ use std::mem;
 use std::ffi::CString;
 use std::sync::mpsc;
 use context::{RvCtx, Transport};
-use message::{Msg, BorrowedMsg};
+use message::{BorrowedMsg, Msg};
 use errors::*;
 use failure::*;
 use std::marker::PhantomData;
 
-unsafe extern "C" fn sync_callback(_event: tibrvEvent,
-                                   message: tibrvMsg,
-                                   closure: *mut ::std::os::raw::c_void)
--> () {
+unsafe extern "C" fn sync_callback(
+    _event: tibrvEvent,
+    message: tibrvMsg,
+    closure: *mut ::std::os::raw::c_void,
+) -> () {
     // If anything goes wrong in this callback, we have no
     // way to indicate that to Rendezvous without causing an abort.
     // Instead we catch any recoverable unwind.
-    let _ =::std::panic::catch_unwind(move || {
+    let _ = ::std::panic::catch_unwind(move || {
         let sender: Box<mpsc::Sender<Msg>> =
             Box::from_raw(closure as *mut mpsc::Sender<Msg>);
         let msg = BorrowedMsg { inner: message };
@@ -43,8 +44,10 @@ impl<'a> Queue<'a> {
     /// queues.
     pub fn new(_ctx: &'a RvCtx) -> Result<Self, TibrvError> {
         let mut ptr: tibrvQueue = unsafe { mem::zeroed() };
-        unsafe { tibrvQueue_Create(&mut ptr) }
-            .and_then(|_| Queue { inner: ptr, phantom: PhantomData })
+        unsafe { tibrvQueue_Create(&mut ptr) }.and_then(|_| Queue {
+            inner: ptr,
+            phantom: PhantomData,
+        })
     }
 
     /// Get the number of events waiting in the queue.
@@ -62,11 +65,13 @@ impl<'a> Queue<'a> {
     ///
     /// Subject must be valid ASCII, wildcards are accepted, although
     /// a wildcard-only subject is not.
-    pub fn subscribe(&self, tp: &Transport, subject: &str)
-        -> Result<Subscription, TibrvError>  {
+    pub fn subscribe(
+        &self,
+        tp: &Transport,
+        subject: &str,
+    ) -> Result<Subscription, TibrvError> {
         let (send, recv) = mpsc::channel();
-        let subject_c = CString::new(subject)
-            .context(ErrorKind::StrContentError)?;
+        let subject_c = CString::new(subject).context(ErrorKind::StrContentError)?;
 
         let mut ptr: tibrvEvent = unsafe { mem::zeroed() };
         let send_ptr = Box::into_raw(Box::new(send.clone()));
@@ -77,15 +82,14 @@ impl<'a> Queue<'a> {
                 Some(sync_callback),
                 tp.inner,
                 subject_c.as_ptr(),
-                send_ptr as *const ::std::os::raw::c_void
-                )
+                send_ptr as *const ::std::os::raw::c_void,
+            )
         }.and_then(|_| Subscription {
             event: ptr,
             queue: self,
-            channel: recv
+            channel: recv,
         })
     }
-
 }
 
 impl<'a> Drop for Queue<'a> {
@@ -109,14 +113,12 @@ pub struct Subscription<'a> {
 impl<'a> Subscription<'a> {
     // Blocking dispatch
     fn dispatch(&self) -> Result<(), TibrvError> {
-        unsafe { tibrvQueue_TimedDispatch(self.queue.inner, -1.0) }
-            .and_then(|_| ())
+        unsafe { tibrvQueue_TimedDispatch(self.queue.inner, -1.0) }.and_then(|_| ())
     }
 
     // Non blocking try-dispatch.
     fn poll(&self) -> Result<(), TibrvError> {
-        unsafe { tibrvQueue_TimedDispatch(self.queue.inner, 0.0) }
-            .and_then(|_| ())
+        unsafe { tibrvQueue_TimedDispatch(self.queue.inner, 0.0) }.and_then(|_| ())
     }
 
     /// Get the next message available on this subscription.
@@ -124,10 +126,12 @@ impl<'a> Subscription<'a> {
     /// Blocks until a message is available in the queue.
     pub fn next(&self) -> Result<Msg, TibrvError> {
         if let Ok(m) = self.channel.try_recv() {
-            return Ok(m)
+            return Ok(m);
         }
         self.dispatch()?;
-        self.channel.recv().context(ErrorKind::QueueError)
+        self.channel
+            .recv()
+            .context(ErrorKind::QueueError)
             .map_err(|e| TibrvError::from(e))
     }
 
@@ -140,10 +144,7 @@ impl<'a> Subscription<'a> {
 impl<'a> Drop for Subscription<'a> {
     fn drop(&mut self) {
         unsafe {
-            tibrvEvent_DestroyEx(
-                self.event,
-                None
-            );
+            tibrvEvent_DestroyEx(self.event, None);
         }
     }
 }

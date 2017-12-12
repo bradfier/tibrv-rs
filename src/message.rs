@@ -41,10 +41,8 @@ impl Msg {
     /// The contents of message fields are always copied, therefore
     /// slice types must be `Copy`. A borrowed `MsgField` does not need
     /// to live beyond the point where it is added to the `Msg`.
-    pub fn add_field(&mut self, field: &mut MsgField)
-        -> Result<&mut Self, TibrvError> {
-        unsafe { tibrvMsg_AddField(self.inner, &mut field.inner) }
-            .and_then(|_| self)
+    pub fn add_field(&mut self, field: &mut MsgField) -> Result<&mut Self, TibrvError> {
+        unsafe { tibrvMsg_AddField(self.inner, &mut field.inner) }.and_then(|_| self)
     }
 
     /// Get a specified field from this message.
@@ -53,8 +51,10 @@ impl Msg {
     /// is guaranteed to live at least as long as the parent `Msg`.
     ///
     /// This variant retrieves the field by name.
-    pub fn get_field_by_name<'a>(&'a self, name: &str)
-         -> Result<BorrowedMsgField<'a>, TibrvError> {
+    pub fn get_field_by_name<'a>(
+        &'a self,
+        name: &str,
+    ) -> Result<BorrowedMsgField<'a>, TibrvError> {
         self.get_field(Some(name), None)
     }
 
@@ -64,34 +64,43 @@ impl Msg {
     /// is guaranteed to live at least as long as the parent `Msg`.
     ///
     /// This variant retrieves the field by id.
-    pub fn get_field_by_id<'a>(&'a self, id: u32)
-         -> Result<BorrowedMsgField<'a>, TibrvError> {
+    pub fn get_field_by_id<'a>(
+        &'a self,
+        id: u32,
+    ) -> Result<BorrowedMsgField<'a>, TibrvError> {
         self.get_field(None, Some(id))
     }
 
-    fn get_field<'a>(&'a self, name: Option<&str>, id: Option<u32>)
-        -> Result<BorrowedMsgField<'a>, TibrvError> {
-        assert_ne!(name.is_some(), id.is_some(),
-                "One of id or name must be provided.");
+    fn get_field<'a>(
+        &'a self,
+        name: Option<&str>,
+        id: Option<u32>,
+    ) -> Result<BorrowedMsgField<'a>, TibrvError> {
+        assert_ne!(
+            name.is_some(),
+            id.is_some(),
+            "One of id or name must be provided."
+        );
         let mut field: tibrvMsgField = unsafe { mem::zeroed() };
-        let field_name = name.map(|s| CString::new(s)
-            .context(ErrorKind::StrContentError))
-            .map_or(Ok(None), |n| n.map(Some))?;
+        let field_name = name.map(|s| {
+            CString::new(s).context(ErrorKind::StrContentError)
+        }).map_or(Ok(None), |n| n.map(Some))?;
 
-        let name_ptr = field_name.as_ref()
-                       .map_or(std::ptr::null(), |s| s.as_ptr());
+        let name_ptr = field_name.as_ref().map_or(std::ptr::null(), |s| s.as_ptr());
         unsafe {
-            tibrvMsg_GetFieldEx(self.inner, name_ptr, &mut field,
-                                id.unwrap_or(0) as tibrv_u16)
-        }.and_then(|_|
-            BorrowedMsgField {
-                inner: MsgField {
-                    name: field_name,
-                    inner: field,
-                },
-                phantom: PhantomData,
-            }
-        )
+            tibrvMsg_GetFieldEx(
+                self.inner,
+                name_ptr,
+                &mut field,
+                id.unwrap_or(0) as tibrv_u16,
+            )
+        }.and_then(|_| BorrowedMsgField {
+            inner: MsgField {
+                name: field_name,
+                inner: field,
+            },
+            phantom: PhantomData,
+        })
     }
 
     /// Remove a specified field from this message.
@@ -114,16 +123,21 @@ impl Msg {
         self.remove_field(None, Some(id))
     }
 
-    fn remove_field(&self, name: Option<&str>, id: Option<u32>)
-        -> Result<(), TibrvError> {
-        assert_ne!(name.is_some(), id.is_some(),
-                   "One of id or name must be provided.");
-        let field_name = name.map(|s| CString::new(s)
-            .context(ErrorKind::StrContentError))
-            .map_or(Ok(None), |n| n.map(Some))?;
+    fn remove_field(
+        &self,
+        name: Option<&str>,
+        id: Option<u32>,
+    ) -> Result<(), TibrvError> {
+        assert_ne!(
+            name.is_some(),
+            id.is_some(),
+            "One of id or name must be provided."
+        );
+        let field_name = name.map(|s| {
+            CString::new(s).context(ErrorKind::StrContentError)
+        }).map_or(Ok(None), |n| n.map(Some))?;
 
-        let name_ptr = field_name.as_ref()
-            .map_or(std::ptr::null(), |m| m.as_ptr());
+        let name_ptr = field_name.as_ref().map_or(std::ptr::null(), |m| m.as_ptr());
         unsafe {
             tibrvMsg_RemoveFieldEx(self.inner, name_ptr, id.unwrap_or(0) as u16)
         }.and_then(|_| ())
@@ -132,8 +146,7 @@ impl Msg {
     /// Get the number of fields within this message.
     pub fn num_fields(&mut self) -> Result<u32, TibrvError> {
         let mut ptr: tibrv_u32 = unsafe { mem::zeroed() };
-        unsafe { tibrvMsg_GetNumFields(self.inner, &mut ptr) }
-            .and_then(|_| ptr as u32)
+        unsafe { tibrvMsg_GetNumFields(self.inner, &mut ptr) }.and_then(|_| ptr as u32)
     }
 
     /// Expand the internal storage of a message.
@@ -143,8 +156,7 @@ impl Msg {
     /// number of fields it may be useful to preallocate enough
     /// space to hold them all.
     pub fn expand(&mut self, amount: i32) -> Result<&mut Self, TibrvError> {
-        unsafe { tibrvMsg_Expand(self.inner, amount as tibrv_i32) }
-            .and_then(|_| self)
+        unsafe { tibrvMsg_Expand(self.inner, amount as tibrv_i32) }.and_then(|_| self)
     }
 
     /// Get the size of the message (in bytes).
@@ -152,20 +164,16 @@ impl Msg {
     /// Does not include space allocated but not yet used.
     pub fn byte_size(&self) -> Result<u32, TibrvError> {
         let mut ptr: tibrv_u32 = unsafe { mem::zeroed() };
-        unsafe { tibrvMsg_GetByteSize(self.inner, &mut ptr) }
-            .and_then(|_| ptr as u32)
+        unsafe { tibrvMsg_GetByteSize(self.inner, &mut ptr) }.and_then(|_| ptr as u32)
     }
 
     /// Set the send subject for the message.
     ///
     /// No wildcards are permitted in sender subjects.
-    pub fn set_send_subject(&mut self, subject: &str)
-        -> Result<(), TibrvError> {
-        let subject_c = CString::new(subject)
-            .context(ErrorKind::StrContentError)?;
-        unsafe {
-            tibrvMsg_SetSendSubject(self.inner, subject_c.as_ptr())
-        }.and_then(|_| ())
+    pub fn set_send_subject(&mut self, subject: &str) -> Result<(), TibrvError> {
+        let subject_c = CString::new(subject).context(ErrorKind::StrContentError)?;
+        unsafe { tibrvMsg_SetSendSubject(self.inner, subject_c.as_ptr()) }
+            .and_then(|_| ())
     }
 }
 
@@ -212,7 +220,6 @@ impl BorrowedMsg {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -228,9 +235,7 @@ mod tests {
     fn add_remove_fields() {
         let data = CString::new("A string").unwrap();
         let cstr = data.as_c_str();
-        let mut field = Builder::new(&cstr)
-            .with_name("StringField")
-            .encode();
+        let mut field = Builder::new(&cstr).with_name("StringField").encode();
 
         let slice: &[u16] = &[1, 2, 3, 4];
         let mut field2 = Builder::new(&slice)
@@ -239,10 +244,12 @@ mod tests {
             .encode();
 
         let mut msg = Msg::new().unwrap();
-        assert!(msg.add_field(&mut field)
-            .unwrap()
-            .add_field(&mut field2)
-            .is_ok());
+        assert!(
+            msg.add_field(&mut field)
+                .unwrap()
+                .add_field(&mut field2)
+                .is_ok()
+        );
 
         assert_eq!(2, msg.num_fields().unwrap());
 
@@ -272,9 +279,7 @@ mod tests {
     fn roundtrip_slice_msg() {
         let mut msg = Msg::new().unwrap();
         let slice: &[u16] = &[5, 4, 3, 2, 1];
-        let mut field = Builder::new(&slice)
-            .with_name("slice")
-            .encode();
+        let mut field = Builder::new(&slice).with_name("slice").encode();
         let _ = msg.add_field(&mut field);
         let extracted = msg.get_field_by_name("slice").unwrap();
 
@@ -288,9 +293,7 @@ mod tests {
 
         let mut msg = Msg::new().unwrap();
         let data = CString::new("Hello world!").unwrap();
-        let mut field = Builder::new(&data.as_c_str())
-            .with_name("string")
-            .encode();
+        let mut field = Builder::new(&data.as_c_str()).with_name("string").encode();
         let _ = msg.add_field(&mut field).unwrap();
         let extracted = msg.get_field_by_name("string").unwrap();
         let decoded = <&CStr>::tibrv_try_decode(&extracted).unwrap();

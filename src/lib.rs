@@ -94,15 +94,16 @@
 //! let msg = subscription.next().unwrap(); // Block, waiting for the next message to arrive on the subscribed subject.
 //! ```
 
-extern crate tibrv_sys;
 extern crate chrono;
 extern crate failure;
-#[macro_use] extern crate failure_derive;
+#[macro_use]
+extern crate failure_derive;
+extern crate tibrv_sys;
 
 #[cfg(feature = "tokio")]
-extern crate mio;
-#[cfg(feature = "tokio")]
 extern crate futures;
+#[cfg(feature = "tokio")]
+extern crate mio;
 #[cfg(feature = "tokio")]
 #[macro_use]
 extern crate tokio_core;
@@ -137,18 +138,14 @@ mod tests {
 
         let data = CString::new("Hello, world!").unwrap();
         let cstr = data.as_c_str();
-        let mut field = Builder::new(&cstr)
-            .with_name("String")
-            .encode();
-        assert!(msg.add_field(&mut field)
-                .is_ok());
+        let mut field = Builder::new(&cstr).with_name("String").encode();
+        assert!(msg.add_field(&mut field).is_ok());
 
         assert!(msg.set_send_subject("DUMMY").is_ok());
 
         let tp = TransportBuilder::new(&ctx).create().unwrap(); // Create default transport
 
         assert!(tp.send(&mut msg).is_ok());
-
     }
 
     // Receive test requires that something be sending messages to the
