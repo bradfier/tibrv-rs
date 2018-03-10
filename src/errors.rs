@@ -1,8 +1,8 @@
 //! Error types returned by methods in this crate.
 
+use failure::*;
 use std::fmt;
 use tibrv_sys::tibrv_status;
-use failure::*;
 
 pub(crate) trait TibrvResult {
     fn and_then<U, F: FnOnce(Self) -> U>(self, f: F) -> Result<U, TibrvError>
@@ -105,7 +105,7 @@ impl From<tibrv_status> for ErrorKind {
     }
 }
 
-/// Allows easy mapping of tibrv_error return codes into
+/// Allows easy mapping of `tibrv_error` return codes into
 /// `Result<U, TibrvError` types.
 ///
 /// Executes supplied closure if the `tibrv_status` is not `TIBRV_OK`.

@@ -4,16 +4,16 @@
 //! and encapsulated in a "message field", represented here by
 //! the `MsgField` type.
 
-use tibrv_sys::*;
+use chrono::NaiveDateTime;
 use errors::*;
 use message::{BorrowedMsg, Msg};
-use std::ffi::{CStr, CString};
-use chrono::NaiveDateTime;
-use std::net::Ipv4Addr;
-use std::os::raw::c_void;
-use std::ops::Deref;
-use std::marker::PhantomData;
 use std;
+use std::ffi::{CStr, CString};
+use std::marker::PhantomData;
+use std::net::Ipv4Addr;
+use std::ops::Deref;
+use std::os::raw::c_void;
+use tibrv_sys::*;
 
 /// A structure wrapping a `tibrvMsgField`
 pub struct MsgField {
@@ -223,7 +223,7 @@ macro_rules! array_encodable {
 impl<'a> Encodable for &'a CStr {
     fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> MsgField {
         must_name!(name, id);
-        let name_cstr = name.map_or(None, |s| Some(CString::new(s).unwrap()));
+        let name_cstr = name.and_then(|s| Some(CString::new(s).unwrap()));
         let ptr = name_cstr.as_ref().map_or(std::ptr::null(), |s| s.as_ptr());
         MsgField {
             name: name_cstr,
@@ -255,7 +255,7 @@ impl<'a> Decodable for &'a CStr {
 impl<'a> Encodable for &'a Msg {
     fn tibrv_encode(&self, name: Option<&str>, id: Option<u32>) -> MsgField {
         must_name!(name, id);
-        let name_cstr = name.map_or(None, |s| Some(CString::new(s).unwrap()));
+        let name_cstr = name.and_then(|s| Some(CString::new(s).unwrap()));
         let ptr = name_cstr.as_ref().map_or(std::ptr::null(), |s| s.as_ptr());
         MsgField {
             name: name_cstr,
@@ -322,7 +322,7 @@ encodable!(Ipv4Addr, tibrv_ipaddr32, ipaddr32, TIBRVMSG_IPADDR32);
 /// encode using the special byte ordering.
 pub fn tibrv_encode_port(port: &u16, name: Option<&str>, id: Option<u32>) -> MsgField {
     must_name!(name, id);
-    let name_cstr = name.map_or(None, |s| Some(CString::new(s).unwrap()));
+    let name_cstr = name.and_then(|s| Some(CString::new(s).unwrap()));
     let ptr = name_cstr.as_ref().map_or(std::ptr::null(), |s| s.as_ptr());
     MsgField {
         name: name_cstr,
@@ -360,7 +360,7 @@ pub unsafe fn tibrv_encode_opaque<'a, T: Copy>(
     id: Option<u32>,
 ) -> MsgField {
     must_name!(name, id);
-    let name_cstr = name.map_or(None, |s| Some(CString::new(s).unwrap()));
+    let name_cstr = name.and_then(|s| Some(CString::new(s).unwrap()));
     let ptr = name_cstr.as_ref().map_or(std::ptr::null(), |s| s.as_ptr());
     MsgField {
         name: name_cstr,
@@ -383,9 +383,7 @@ pub unsafe fn tibrv_encode_opaque<'a, T: Copy>(
 /// is lost (internally the slice is passed as `void*`).
 /// Therefore this function is approximately as unsafe as `std::mem::transmute`,
 /// except without the soft and fluffy blanket of size checking.
-pub unsafe fn tibrv_try_decode_opaque<T: Copy>(
-    msg: &MsgField,
-) -> Result<&[T], TibrvError> {
+pub unsafe fn tibrv_try_decode_opaque<T: Copy>(msg: &MsgField) -> Result<&[T], TibrvError> {
     if msg.inner.type_ != TIBRVMSG_OPAQUE as u8 {
         Err(ErrorKind::FieldTypeError)?
     } else {

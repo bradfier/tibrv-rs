@@ -1,17 +1,21 @@
 //! Interface for creating and managing the Rendezvous internal machinery
 
-use tibrv_sys::*;
-use message::Msg;
 use errors::*;
-use std::ffi::{CStr, CString};
-use std::marker::PhantomData;
-use std::ptr::null;
+use event::{Queue, Subscription};
 use failure::*;
+use message::Msg;
+use std::ffi::{CStr, CString};
+use std::ptr::null;
+use tibrv_sys::*;
 
+#[cfg(feature = "tokio")]
+use async::{AsyncQueue, AsyncSub};
 #[cfg(feature = "tokio")]
 use futures::prelude::{Async, AsyncSink, Poll, Sink, StartSend};
 #[cfg(feature = "tokio")]
 use std::io;
+#[cfg(feature = "tokio")]
+use tokio::reactor::Handle;
 
 /// A struct representing a Rendezvous transport object.
 ///
@@ -42,20 +46,20 @@ use std::io;
 ///  transports is available in the [TIBCO Rendezvous Concepts][1] guide.
 ///
 ///  [1]: https://docs.tibco.com/pub/rv_zos/8.4.5/doc/pdf/TIB_rv_concepts.pdf
-pub struct Transport<'a> {
+pub struct Transport {
     pub(crate) inner: tibrvTransport,
-    phantom: PhantomData<&'a RvCtx>,
+    _context: RvCtx,
 }
 
 /// A builder for a Rendezvous transport object.
-pub struct TransportBuilder<'a> {
+pub struct TransportBuilder {
     service: Option<CString>,
     daemon: Option<CString>,
     network: Option<CString>,
-    phantom: PhantomData<&'a RvCtx>,
+    context: RvCtx,
 }
 
-impl<'a> TransportBuilder<'a> {
+impl TransportBuilder {
     /// Constructs a new TransportBuilder with the default parameters selected.
     ///
     /// The supplied `RvCtx` must live at least as long as any constructed
@@ -65,12 +69,12 @@ impl<'a> TransportBuilder<'a> {
     /// documentation on [`Transport`].
     ///
     /// [`Transport`]: struct.Transport.html
-    pub fn new(_ctx: &'a RvCtx) -> Self {
+    pub fn new(ctx: RvCtx) -> Self {
         TransportBuilder {
             service: None,
             daemon: None,
             network: None,
-            phantom: PhantomData,
+            context: ctx,
         }
     }
     /// Sets the `service` parameter.
@@ -92,10 +96,11 @@ impl<'a> TransportBuilder<'a> {
     }
 
     /// Consumes the `TransportBuilder`, creating a `Transport`.
-    pub fn create(self) -> Result<Transport<'a>, TibrvError> {
+    pub fn create(self) -> Result<Transport, TibrvError> {
         // 0 is a bogus value, but we need to convince the compiler transport
         // will actually be initialized by _Create
         let mut transport: tibrvTransport = 0;
+        let ctx = self.context.clone();
 
         let result = unsafe {
             tibrvTransport_Create(
@@ -107,7 +112,7 @@ impl<'a> TransportBuilder<'a> {
         };
         result.and_then(|_| Transport {
             inner: transport,
-            phantom: PhantomData,
+            _context: ctx,
         })
     }
 }
@@ -132,6 +137,16 @@ impl RvCtx {
     }
 }
 
+// TODO: Handle a failed clone?
+impl Clone for RvCtx {
+    fn clone(&self) -> RvCtx {
+        unsafe {
+            tibrv_Open();
+        }
+        RvCtx {}
+    }
+}
+
 // tibrv is internally reference counted, so we must ensure each
 // tibrv_Open() is followed eventually with a _Close()
 impl Drop for RvCtx {
@@ -140,11 +155,10 @@ impl Drop for RvCtx {
     }
 }
 
-impl<'a> Transport<'a> {
+impl Transport {
     /// Extract the daemon parameter from the transport.
     pub fn daemon(&self) -> Result<String, TibrvError> {
-        let mut ptr: *const ::std::os::raw::c_char =
-            unsafe { ::std::mem::zeroed() };
+        let mut ptr: *const ::std::os::raw::c_char = unsafe { ::std::mem::zeroed() };
 
         unsafe {
             tibrvTransport_GetDaemon(self.inner, &mut ptr)
@@ -154,8 +168,7 @@ impl<'a> Transport<'a> {
 
     /// Extract the network parameter from the transport.
     pub fn network(&self) -> Result<String, TibrvError> {
-        let mut ptr: *const ::std::os::raw::c_char =
-            unsafe { ::std::mem::zeroed() };
+        let mut ptr: *const ::std::os::raw::c_char = unsafe { ::std::mem::zeroed() };
 
         unsafe {
             tibrvTransport_GetNetwork(self.inner, &mut ptr)
@@ -165,8 +178,7 @@ impl<'a> Transport<'a> {
 
     /// Extract the service parameter from the transport.
     pub fn service(&self) -> Result<String, TibrvError> {
-        let mut ptr: *const ::std::os::raw::c_char =
-            unsafe { ::std::mem::zeroed() };
+        let mut ptr: *const ::std::os::raw::c_char = unsafe { ::std::mem::zeroed() };
 
         unsafe {
             tibrvTransport_GetService(self.inner, &mut ptr)
@@ -183,14 +195,14 @@ impl<'a> Transport<'a> {
     }
 }
 
-impl<'a> Drop for Transport<'a> {
+impl Drop for Transport {
     fn drop(&mut self) {
         unsafe { tibrvTransport_Destroy(self.inner) };
     }
 }
 
 #[cfg(feature = "tokio")]
-impl<'a> Sink for Transport<'a> {
+impl Sink for Transport {
     type SinkItem = Msg;
     type SinkError = io::Error; // Should eventually be tibrv::Error
 
@@ -198,15 +210,11 @@ impl<'a> Sink for Transport<'a> {
     // From the documentation it looks like tibrvTransport_Send
     // isn't supposed to block, so we have to just assume it's
     // doing internal buffering.
-    fn start_send(
-        &mut self,
-        mut item: Msg,
-    ) -> StartSend<Self::SinkItem, Self::SinkError> {
+    fn start_send(&mut self, mut item: Msg) -> StartSend<Self::SinkItem, Self::SinkError> {
         // Here we do the send immediately, then always return
         // complete when poll_complete is called later.
-        Transport::send(self, &mut item).map_err(|_| {
-            io::Error::new(io::ErrorKind::Other, "Unable to send on transport")
-        })?;
+        Transport::send(self, &mut item)
+            .map_err(|_| io::Error::new(io::ErrorKind::Other, "Unable to send on transport"))?;
         Ok(AsyncSink::Ready)
     }
 
@@ -228,7 +236,7 @@ mod tests {
     #[test]
     fn default_transport() {
         let ctx = RvCtx::new().unwrap();
-        let tp = TransportBuilder::new(&ctx).create();
+        let tp = TransportBuilder::new(ctx).create();
         let _ = tp.map_err(|e| assert_eq!(ErrorKind::TransportError, e.kind()));
     }
 }

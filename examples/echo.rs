@@ -7,8 +7,8 @@ use tibrv::event::Queue;
 /// and echo them out again on a different Rendezvous subject.
 fn main() {
     let ctx = RvCtx::new().unwrap(); // Create the context, starting Rendezvous internals
-    let tp = TransportBuilder::new(&ctx).create().unwrap(); // Create a default transport
-    let event_queue = Queue::new(&ctx).unwrap(); // Create an event queue for incoming messages
+    let tp = TransportBuilder::new(ctx.clone()).create().unwrap(); // Create a default transport
+    let event_queue = Queue::new(ctx.clone()).unwrap(); // Create an event queue for incoming messages
 
     // Subscribe to the inbound message subject:
     let subscription = event_queue.subscribe(&tp, "TEST.SUBJECT").unwrap();

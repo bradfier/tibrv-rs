@@ -1,14 +1,13 @@
 //! Interfaces for dealing with inbound events from Rendezvous
 
-use tibrv_sys::*;
-use std::mem;
-use std::ffi::CString;
-use std::sync::mpsc;
 use context::{RvCtx, Transport};
-use message::{BorrowedMsg, Msg};
 use errors::*;
 use failure::*;
-use std::marker::PhantomData;
+use message::{BorrowedMsg, Msg};
+use std::ffi::CString;
+use std::mem;
+use std::sync::mpsc;
+use tibrv_sys::*;
 
 unsafe extern "C" fn sync_callback(
     _event: tibrvEvent,
@@ -19,8 +18,7 @@ unsafe extern "C" fn sync_callback(
     // way to indicate that to Rendezvous without causing an abort.
     // Instead we catch any recoverable unwind.
     let _ = ::std::panic::catch_unwind(move || {
-        let sender: Box<mpsc::Sender<Msg>> =
-            Box::from_raw(closure as *mut mpsc::Sender<Msg>);
+        let sender: Box<mpsc::Sender<Msg>> = Box::from_raw(closure as *mut mpsc::Sender<Msg>);
         let msg = BorrowedMsg { inner: message };
         sender.send(msg.detach().unwrap()).unwrap();
         ::std::mem::forget(sender); // Don't run Drop on the channel
@@ -32,21 +30,21 @@ unsafe extern "C" fn sync_callback(
 /// Represents a queue of events waiting for dispatch, at present
 /// only message queues are implemented, although the library supports
 /// IO (socket) events and arbitrary timers as well.
-pub struct Queue<'a> {
+pub struct Queue {
     pub(crate) inner: tibrvQueue,
-    phantom: PhantomData<&'a RvCtx>,
+    _context: RvCtx,
 }
 
-impl<'a> Queue<'a> {
+impl Queue {
     /// Constructs a new event queue.
     ///
     /// The supplied `RvCtx` must live at least as long as any created
     /// queues.
-    pub fn new(_ctx: &'a RvCtx) -> Result<Self, TibrvError> {
+    pub fn new(ctx: RvCtx) -> Result<Self, TibrvError> {
         let mut ptr: tibrvQueue = unsafe { mem::zeroed() };
         unsafe { tibrvQueue_Create(&mut ptr) }.and_then(|_| Queue {
             inner: ptr,
-            phantom: PhantomData,
+            _context: ctx,
         })
     }
 
@@ -65,11 +63,7 @@ impl<'a> Queue<'a> {
     ///
     /// Subject must be valid ASCII, wildcards are accepted, although
     /// a wildcard-only subject is not.
-    pub fn subscribe(
-        &self,
-        tp: &Transport,
-        subject: &str,
-    ) -> Result<Subscription, TibrvError> {
+    pub fn subscribe(self, tp: &Transport, subject: &str) -> Result<Subscription, TibrvError> {
         let (send, recv) = mpsc::channel();
         let subject_c = CString::new(subject).context(ErrorKind::StrContentError)?;
 
@@ -92,7 +86,7 @@ impl<'a> Queue<'a> {
     }
 }
 
-impl<'a> Drop for Queue<'a> {
+impl Drop for Queue {
     fn drop(&mut self) {
         unsafe {
             tibrvQueue_DestroyEx(self.inner, None, ::std::ptr::null());
@@ -104,13 +98,13 @@ impl<'a> Drop for Queue<'a> {
 ///
 /// Wraps the event, the event queue, and the `mpsc::Receiver`
 /// containing the `Msg` data.
-pub struct Subscription<'a> {
+pub struct Subscription {
     event: tibrvEvent,
-    queue: &'a Queue<'a>,
+    pub(crate) queue: Queue,
     channel: mpsc::Receiver<Msg>,
 }
 
-impl<'a> Subscription<'a> {
+impl Subscription {
     // Blocking dispatch
     fn dispatch(&self) -> Result<(), TibrvError> {
         unsafe { tibrvQueue_TimedDispatch(self.queue.inner, -1.0) }.and_then(|_| ())
@@ -132,7 +126,7 @@ impl<'a> Subscription<'a> {
         self.channel
             .recv()
             .context(ErrorKind::QueueError)
-            .map_err(|e| TibrvError::from(e))
+            .map_err(TibrvError::from)
     }
 
     pub fn try_next(&self) -> Result<Msg, mpsc::TryRecvError> {
@@ -141,7 +135,7 @@ impl<'a> Subscription<'a> {
     }
 }
 
-impl<'a> Drop for Subscription<'a> {
+impl Drop for Subscription {
     fn drop(&mut self) {
         unsafe {
             tibrvEvent_DestroyEx(self.event, None);
@@ -157,17 +151,18 @@ mod tests {
     #[test]
     fn creation() {
         let ctx = RvCtx::new().unwrap();
-        let queue = Queue::new(&ctx);
+        let queue = Queue::new(ctx);
         assert!(queue.is_ok());
         assert_eq!(0, queue.unwrap().count().unwrap());
     }
 
-    #[ignore] // Requires a running rvd
+    #[ignore]
+    // Requires a running rvd
     #[test]
     fn subscribe() {
         let ctx = RvCtx::new().unwrap();
-        let queue = Queue::new(&ctx).unwrap();
-        let tp = TransportBuilder::new(&ctx).create().unwrap();
+        let queue = Queue::new(ctx.clone()).unwrap();
+        let tp = TransportBuilder::new(ctx.clone()).create().unwrap();
         let sub = queue.subscribe(&tp, "TEST");
         assert!(sub.is_ok());
     }
