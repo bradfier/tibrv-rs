@@ -74,7 +74,7 @@
 //! assert!(msg.add_field(&mut field).is_ok()); // Copy the field into the message.
 //! assert!(msg.set_send_subject("TEST.SUBJECT").is_ok()); // Set the send subject.
 //!
-//! let tp = TransportBuilder::new(&ctx).create().unwrap(); // Create a default Rendezvous transport.
+//! let tp = TransportBuilder::new(ctx.clone()).create().unwrap(); // Create a default Rendezvous transport.
 //!
 //! assert!(tp.send(&mut msg).is_ok());
 //! ```
@@ -86,9 +86,9 @@
 //! use tibrv::event::Queue;
 //!
 //! let ctx = RvCtx::new().unwrap(); // Starts the Rendezvous internal machinery
-//! let tp = TransportBuilder::new(&ctx).create().unwrap(); // Create a default Rendezvous transport.
+//! let tp = TransportBuilder::new(ctx.clone()).create().unwrap(); // Create a default Rendezvous transport.
 //!
-//! let queue = Queue::new(&ctx).unwrap(); // Create a new event queue.
+//! let queue = Queue::new(ctx.clone()).unwrap(); // Create a new event queue.
 //! let subscription = queue.subscribe(&tp, "TEST.SUBJECT").unwrap(); // Subscribe to a Rendezvous subject on this event queue.
 //!
 //! let msg = subscription.next().unwrap(); // Block, waiting for the next message to arrive on the subscribed subject.
@@ -106,7 +106,7 @@ extern crate futures;
 extern crate mio;
 #[cfg(feature = "tokio")]
 #[macro_use]
-extern crate tokio_core;
+extern crate tokio;
 
 #[macro_use]
 pub mod errors;
@@ -143,7 +143,7 @@ mod tests {
 
         assert!(msg.set_send_subject("DUMMY").is_ok());
 
-        let tp = TransportBuilder::new(&ctx).create().unwrap(); // Create default transport
+        let tp = TransportBuilder::new(ctx.clone()).create().unwrap(); // Create default transport
 
         assert!(tp.send(&mut msg).is_ok());
     }

@@ -4,7 +4,7 @@ version = "0.2.0"
 authors = ["Richard Bradfield <bradfier@fstab.me>"]
 license = "MIT/Apache-2.0"
 readme = "README.md"
-keywords = ["tibrv", "messaging"]
+keywords = ["tibrv", "rendezvous", "messaging"]
 repository = "https://github.com/bradfier/tibrv-rs"
 homepage = "https://github.com/bradfier/tibrv-rs"
 documentation = "https://bradfier.github.io/tibrv-rs/"
@@ -22,9 +22,9 @@ chrono = "0.4"
 failure = "^0.1"
 failure_derive = "^0.1"
 tibrv-sys = { version = "0.2", path = "tibrv-sys" }
-tokio-core = { version = "0.1.10", optional = true }
-mio = { version = "0.6.10", optional = true }
-futures = { version = "0.1.16", optional = true }
+tokio = { version = "^0.1.3", optional = true }
+mio = { version = "0.6.14", optional = true }
+futures = { version = "0.1.18", optional = true }
 
 [features]
-tokio = ["tokio-core", "futures", "mio"]
+async = ["tokio", "futures", "mio"]

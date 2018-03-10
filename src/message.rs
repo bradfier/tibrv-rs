@@ -19,6 +19,8 @@ pub struct Msg {
     pub(crate) inner: tibrvMsg,
 }
 
+unsafe impl Send for Msg {}
+
 impl Msg {
     /// Construct a new owned Rendezvous Message
     pub fn new() -> Result<Self, TibrvError> {

@@ -14,7 +14,7 @@ use tibrv_sys::*;
 use std::io;
 use mio;
 use std::sync::{mpsc, Arc, Mutex};
-use tokio_core::reactor::{Handle, PollEvented};
+use tokio::reactor::{Handle, PollEvented};
 use futures::stream::Stream;
 use futures::{Async, Poll};
 
@@ -24,18 +24,32 @@ use message::Msg;
 use errors::*;
 use failure::*;
 
+/// Convenience macro for working with `io::Result<T>` types.
+///
+/// Copied from tokio_core for use where the sub crate isn't included in
+/// this crate.
+macro_rules! try_nb {
+    ($e:expr) => (match $e {
+        Ok(t) => t,
+        Err(ref e) if e.kind() == ::std::io::ErrorKind::WouldBlock => {
+            return Ok(::futures::Async::NotReady)
+        }
+        Err(e) => return Err(e.into()),
+    })
+}
+
 /// Struct representing an asynchronous Rendezvous event queue.
 ///
 /// Wraps a `Queue` and sets up event callbacks in Rendezvous to
 /// drive a `Readiness` stream for use with Tokio.
-pub struct AsyncQueue<'a> {
-    queue: Queue<'a>,
+pub struct AsyncQueue {
+    queue: Queue,
     listeners: Arc<Mutex<Vec<mio::SetReadiness>>>,
 }
 
-impl<'a> AsyncQueue<'a> {
+impl AsyncQueue {
     /// Construct a new asynchronous event queue.
-    pub fn new(ctx: &'a RvCtx) -> Result<Self, TibrvError> {
+    pub fn new(ctx: RvCtx) -> Result<Self, TibrvError> {
         Ok(AsyncQueue {
             queue: Queue::new(ctx)?,
             listeners: Arc::new(Mutex::new(Vec::new())),
@@ -76,7 +90,7 @@ impl<'a> AsyncQueue<'a> {
     /// Sets up the channels as in a synchronous subscription and returns
     /// an `AsyncSub` stream.
     pub fn subscribe(
-        &self,
+        self,
         handle: &Handle,
         tp: &Transport,
         subject: &str,
@@ -92,21 +106,20 @@ impl<'a> AsyncQueue<'a> {
         listeners.push(ready);
         let sub = self.queue.subscribe(tp, subject)?;
 
-        if !self.has_hook() {
-            // Set up event hook
-            let l_arc = Arc::clone(&self.listeners);
-            let l_ptr = Arc::into_raw(l_arc);
-            let result = unsafe {
-                tibrvQueue_SetHook(
-                    self.queue.inner,
-                    Some(AsyncQueue::callback),
-                    l_ptr as *mut ::std::os::raw::c_void,
-                )
-            };
-            if result != tibrv_status::TIBRV_OK {
-                Err(ErrorKind::AsyncRegError)?;
-            };
-        }
+        // Set up event hook
+        let l_arc = Arc::clone(&self.listeners);
+        let l_ptr = Arc::into_raw(l_arc);
+        let result = unsafe {
+            tibrvQueue_SetHook(
+                sub.queue.inner,
+                Some(AsyncQueue::callback),
+                l_ptr as *mut ::std::os::raw::c_void,
+            )
+        };
+        if result != tibrv_status::TIBRV_OK {
+            Err(ErrorKind::AsyncRegError)?;
+        };
+
         Ok(AsyncSub {
             sub: sub,
             io: PollEvented::new(registration, handle)
@@ -122,13 +135,13 @@ impl<'a> AsyncQueue<'a> {
 /// leaked until the parent `AsyncQueue` is dropped. This is due to the
 /// queue holding one side of a `mio::Registration` which becomes defunct
 /// once the subscription is dropped.
-pub struct AsyncSub<'a> {
-    sub: Subscription<'a>,
+pub struct AsyncSub {
+    sub: Subscription,
     io: PollEvented<mio::Registration>,
 }
 
-impl<'a> AsyncSub<'a> {
-    fn next(&self) -> io::Result<Msg> {
+impl AsyncSub {
+    fn next(&mut self) -> io::Result<Msg> {
         loop {
             // It's possible our queue was pushed into from another
             // event, so optimistically check for a message.
@@ -160,7 +173,7 @@ impl<'a> AsyncSub<'a> {
     }
 }
 
-impl<'a> Stream for AsyncSub<'a> {
+impl Stream for AsyncSub {
     type Item = Msg;
     type Error = io::Error;
 
@@ -173,26 +186,26 @@ impl<'a> Stream for AsyncSub<'a> {
 mod tests {
     use context::{RvCtx, TransportBuilder};
     use async::AsyncQueue;
-    use tokio_core::reactor::Core;
+    use tokio::prelude::*;
+    use tokio::reactor::Handle;
 
     #[test]
     fn no_hook() {
         let ctx = RvCtx::new().unwrap();
-        let queue = AsyncQueue::new(&ctx).unwrap();
+        let queue = AsyncQueue::new(ctx).unwrap();
         assert_eq!(false, queue.has_hook());
     }
 
     #[test]
     #[ignore]
     fn has_hook() {
-        let core = Core::new().unwrap();
+        let handle = Handle::current();
 
         let ctx = RvCtx::new().unwrap();
-        let tp = TransportBuilder::new(&ctx).create().unwrap();
-        let queue = AsyncQueue::new(&ctx).unwrap();
+        let tp = TransportBuilder::new(ctx.clone()).create().unwrap();
+        let queue = AsyncQueue::new(ctx.clone()).unwrap();
 
         assert_eq!(false, queue.has_hook());
-        let _ = queue.subscribe(&core.handle(), &tp, "TEST").unwrap();
-        assert_eq!(true, queue.has_hook());
+        let _ = queue.subscribe(&handle, &tp, "TEST").unwrap();
     }
 }
