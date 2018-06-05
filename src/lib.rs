@@ -83,13 +83,11 @@
 //!
 //! ```no_run
 //! use tibrv::context::{RvCtx, TransportBuilder};
-//! use tibrv::event::Queue;
 //!
 //! let ctx = RvCtx::new().unwrap(); // Starts the Rendezvous internal machinery
 //! let tp = TransportBuilder::new(ctx.clone()).create().unwrap(); // Create a default Rendezvous transport.
 //!
-//! let queue = Queue::new(ctx.clone()).unwrap(); // Create a new event queue.
-//! let subscription = queue.subscribe(&tp, "TEST.SUBJECT").unwrap(); // Subscribe to a Rendezvous subject on this event queue.
+//! let subscription = tp.subscribe("TEST.SUBJECT").unwrap(); // Subscribe to a Rendezvous subject on this transport
 //!
 //! let msg = subscription.next().unwrap(); // Block, waiting for the next message to arrive on the subscribed subject.
 //! ```

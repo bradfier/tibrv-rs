@@ -48,7 +48,7 @@ use tokio::reactor::Handle;
 ///  [1]: https://docs.tibco.com/pub/rv_zos/8.4.5/doc/pdf/TIB_rv_concepts.pdf
 pub struct Transport {
     pub(crate) inner: tibrvTransport,
-    _context: RvCtx,
+    context: RvCtx,
 }
 
 /// A builder for a Rendezvous transport object.
@@ -112,7 +112,7 @@ impl TransportBuilder {
         };
         result.and_then(|_| Transport {
             inner: transport,
-            _context: ctx,
+            context: ctx,
         })
     }
 }
@@ -192,6 +192,27 @@ impl Transport {
     /// of the C library functions.
     pub fn send(&self, msg: &mut Msg) -> Result<(), TibrvError> {
         unsafe { tibrvTransport_Send(self.inner, msg.inner) }.and_then(|_| ())
+    }
+
+    /// Subscribe to a message subject.
+    ///
+    /// Sets up a Rendezvous message queue, along with a callback which
+    /// copies messages from the event queue into an `mspc::channel` for
+    /// consumption from Rust.
+    ///
+    /// Subject must be valid ASCII, wildcards are accepted, although a
+    /// wildcard-only subject is not.
+    pub fn subscribe(&self, subject: &str) -> Result<Subscription, TibrvError> {
+        Queue::new(self.context.clone())?.subscribe(&self, subject)
+    }
+
+    #[cfg(feature = "tokio")]
+    /// Asynchronously subscribe to a message subject.
+    ///
+    /// Sets up the queue and channels as in a synchronous subscription, and
+    /// returns an `AsyncSub` stream.
+    pub fn async_sub(&self, handle: &Handle, subject: &str) -> Result<AsyncSub, TibrvError> {
+        AsyncQueue::new(self.context.clone())?.subscribe(handle, &self, subject)
     }
 }
 
