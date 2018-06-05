@@ -13,6 +13,14 @@ Upcoming Changes
 * Rendezvous Request / Reply
 * Rendezvous Distributed Queues
 
+`0.3.0`_ (2018-06-06)
+---------------------
+
+* Migrates to Tokio 0.1, with API changes required to accomodate new
+  constraints imposed by the Tokio and Futures crates.
+  This release contains **breaking changes** which are documented in more
+  detail `here <https://fstab.me/posts/tibrv-0.3.0.html>`_.
+
 `0.2.0`_ (2017-12-12)
 ---------------------
 
@@ -32,5 +40,6 @@ Initial public release.
 * First usable release on `crates.io <https://crates.io/crates/tibrv>`_.
 
 
+.. _`0.3.0`: https://github.com/bradfier/tibrv-rs/compare/v0.2.0...v0.3.0
 .. _`0.2.0`: https://github.com/bradfier/tibrv-rs/compare/v0.1.1...v0.2.0
 .. _`0.1.1`: https://github.com/bradfier/tibrv-rs/compare/2947f836...v0.1.1
