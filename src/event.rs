@@ -30,7 +30,7 @@ unsafe extern "C" fn sync_callback(
 /// Represents a queue of events waiting for dispatch, at present
 /// only message queues are implemented, although the library supports
 /// IO (socket) events and arbitrary timers as well.
-pub struct Queue {
+pub(crate) struct Queue {
     pub(crate) inner: tibrvQueue,
     _context: RvCtx,
 }
@@ -40,7 +40,7 @@ impl Queue {
     ///
     /// The supplied `RvCtx` must live at least as long as any created
     /// queues.
-    pub fn new(ctx: RvCtx) -> Result<Self, TibrvError> {
+    pub(crate) fn new(ctx: RvCtx) -> Result<Self, TibrvError> {
         let mut ptr: tibrvQueue = unsafe { mem::zeroed() };
         unsafe { tibrvQueue_Create(&mut ptr) }.and_then(|_| Queue {
             inner: ptr,
@@ -49,7 +49,8 @@ impl Queue {
     }
 
     /// Get the number of events waiting in the queue.
-    pub fn count(&self) -> Result<u32, TibrvError> {
+    #[allow(dead_code)]
+    pub(crate) fn count(&self) -> Result<u32, TibrvError> {
         let mut ptr: u32 = 0;
         unsafe { tibrvQueue_GetCount(self.inner, &mut ptr) }.and_then(|_| ptr)
     }
@@ -63,7 +64,7 @@ impl Queue {
     ///
     /// Subject must be valid ASCII, wildcards are accepted, although
     /// a wildcard-only subject is not.
-    pub fn subscribe(self, tp: &Transport, subject: &str) -> Result<Subscription, TibrvError> {
+    pub(crate) fn subscribe(self, tp: &Transport, subject: &str) -> Result<Subscription, TibrvError> {
         let (send, recv) = mpsc::channel();
         let subject_c = CString::new(subject).context(ErrorKind::StrContentError)?;
 

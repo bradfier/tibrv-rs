@@ -44,7 +44,7 @@ macro_rules! try_nb {
 ///
 /// Wraps a `Queue` and sets up event callbacks in Rendezvous to
 /// drive a `Readiness` stream for use with Tokio.
-pub struct AsyncQueue {
+pub(crate) struct AsyncQueue {
     queue: Queue,
     listeners: Arc<Mutex<Vec<mio::SetReadiness>>>,
 }

@@ -2,7 +2,6 @@ extern crate futures;
 extern crate tibrv;
 extern crate tokio;
 
-use tibrv::async::AsyncQueue;
 use tibrv::context::{RvCtx, TransportBuilder};
 
 use futures::prelude::Stream;
@@ -20,10 +19,8 @@ fn main() {
         .create()
         .expect("Couldn't create default transport.");
 
-    let event_queue = AsyncQueue::new(ctx.clone()).expect("Couldn't create event queue.");
-
     // Set up the incoming event stream
-    let incoming = event_queue.subscribe(&handle, &tp, "TEST").unwrap();
+    let incoming = tp.async_sub(&handle, "TEST").unwrap();
 
     let events = incoming
         .and_then(|mut msg| {
