@@ -1,13 +1,13 @@
 //! Interfaces for dealing with inbound events from Rendezvous
 
-use tibrv_sys::*;
-use std::mem;
-use std::ffi::CString;
-use std::sync::mpsc;
 use context::{RvCtx, Transport};
-use message::{BorrowedMsg, Msg};
 use errors::*;
 use failure::*;
+use message::{BorrowedMsg, Msg};
+use std::ffi::CString;
+use std::mem;
+use std::sync::mpsc;
+use tibrv_sys::*;
 
 unsafe extern "C" fn sync_callback(
     _event: tibrvEvent,
@@ -18,8 +18,7 @@ unsafe extern "C" fn sync_callback(
     // way to indicate that to Rendezvous without causing an abort.
     // Instead we catch any recoverable unwind.
     let _ = ::std::panic::catch_unwind(move || {
-        let sender: Box<mpsc::Sender<Msg>> =
-            Box::from_raw(closure as *mut mpsc::Sender<Msg>);
+        let sender: Box<mpsc::Sender<Msg>> = Box::from_raw(closure as *mut mpsc::Sender<Msg>);
         let msg = BorrowedMsg { inner: message };
         sender.send(msg.detach().unwrap()).unwrap();
         ::std::mem::forget(sender); // Don't run Drop on the channel
@@ -64,11 +63,7 @@ impl Queue {
     ///
     /// Subject must be valid ASCII, wildcards are accepted, although
     /// a wildcard-only subject is not.
-    pub fn subscribe(
-        self,
-        tp: &Transport,
-        subject: &str,
-    ) -> Result<Subscription, TibrvError> {
+    pub fn subscribe(self, tp: &Transport, subject: &str) -> Result<Subscription, TibrvError> {
         let (send, recv) = mpsc::channel();
         let subject_c = CString::new(subject).context(ErrorKind::StrContentError)?;
 
@@ -131,7 +126,7 @@ impl Subscription {
         self.channel
             .recv()
             .context(ErrorKind::QueueError)
-            .map_err(|e| TibrvError::from(e))
+            .map_err(TibrvError::from)
     }
 
     pub fn try_next(&self) -> Result<Msg, mpsc::TryRecvError> {
@@ -161,7 +156,8 @@ mod tests {
         assert_eq!(0, queue.unwrap().count().unwrap());
     }
 
-    #[ignore] // Requires a running rvd
+    #[ignore]
+    // Requires a running rvd
     #[test]
     fn subscribe() {
         let ctx = RvCtx::new().unwrap();

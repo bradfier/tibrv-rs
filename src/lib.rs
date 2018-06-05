@@ -105,18 +105,17 @@ extern crate futures;
 #[cfg(feature = "tokio")]
 extern crate mio;
 #[cfg(feature = "tokio")]
-#[macro_use]
 extern crate tokio;
 
 #[macro_use]
 pub mod errors;
 
-pub mod field;
-pub mod message;
-pub mod context;
-pub mod event;
 #[cfg(feature = "tokio")]
 pub mod async;
+pub mod context;
+pub mod event;
+pub mod field;
+pub mod message;
 
 #[cfg(test)]
 mod tests {
@@ -128,10 +127,10 @@ mod tests {
     #[test]
     #[ignore]
     fn send_msg() {
-        use std::ffi::CString;
         use context::{RvCtx, TransportBuilder};
-        use message::Msg;
         use field::Builder;
+        use message::Msg;
+        use std::ffi::CString;
 
         let ctx = RvCtx::new().unwrap();
         let mut msg = Msg::new().unwrap();

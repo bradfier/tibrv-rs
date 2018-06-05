@@ -10,32 +10,34 @@
 //! unsubscribes from subjects, consider periodically re-creating
 //! the event queue to free these orphan references.
 
-use tibrv_sys::*;
-use std::io;
-use mio;
-use std::sync::{mpsc, Arc, Mutex};
-use tokio::reactor::{Handle, PollEvented};
 use futures::stream::Stream;
 use futures::{Async, Poll};
+use mio;
+use std::io;
+use std::sync::{mpsc, Arc, Mutex};
+use tibrv_sys::*;
+use tokio::reactor::{Handle, PollEvented2};
 
-use event::{Queue, Subscription};
 use context::{RvCtx, Transport};
-use message::Msg;
 use errors::*;
+use event::{Queue, Subscription};
 use failure::*;
+use message::Msg;
 
 /// Convenience macro for working with `io::Result<T>` types.
 ///
-/// Copied from tokio_core for use where the sub crate isn't included in
+/// Copied from `tokio_core` for use where the sub crate isn't included in
 /// this crate.
 macro_rules! try_nb {
-    ($e:expr) => (match $e {
-        Ok(t) => t,
-        Err(ref e) if e.kind() == ::std::io::ErrorKind::WouldBlock => {
-            return Ok(::futures::Async::NotReady)
+    ($e:expr) => {
+        match $e {
+            Ok(t) => t,
+            Err(ref e) if e.kind() == ::std::io::ErrorKind::WouldBlock => {
+                return Ok(::futures::Async::NotReady)
+            }
+            Err(e) => return Err(e.into()),
         }
-        Err(e) => return Err(e.into()),
-    })
+    };
 }
 
 /// Struct representing an asynchronous Rendezvous event queue.
@@ -56,10 +58,7 @@ impl AsyncQueue {
         })
     }
 
-    unsafe extern "C" fn callback(
-        _queue: tibrvQueue,
-        closure: *mut ::std::os::raw::c_void,
-    ) -> () {
+    unsafe extern "C" fn callback(_queue: tibrvQueue, closure: *mut ::std::os::raw::c_void) -> () {
         // As with the sync version, we can't panic and unwind into the
         // caller, so we catch any recoverable panic and ignore it.
         let _ = ::std::panic::catch_unwind(move || {
@@ -76,6 +75,7 @@ impl AsyncQueue {
         });
     }
 
+    #[allow(dead_code)]
     fn has_hook(&self) -> bool {
         let mut ptr: tibrvQueueHook = unsafe { ::std::mem::zeroed() };
         let result = unsafe { tibrvQueue_GetHook(self.queue.inner, &mut ptr) };
@@ -99,7 +99,8 @@ impl AsyncQueue {
 
         // This shouldn't ever fail, if it does, something panic-worthy has
         // gone wrong.
-        let mut listeners = self.listeners
+        let mut listeners = self
+            .listeners
             .lock()
             .expect("Couldn't lock async channel notifier list!");
 
@@ -121,8 +122,8 @@ impl AsyncQueue {
         };
 
         Ok(AsyncSub {
-            sub: sub,
-            io: PollEvented::new(registration, handle)
+            sub,
+            io: PollEvented2::new_with_handle(registration, handle)
                 .context(ErrorKind::AsyncRegError)?,
         })
     }
@@ -137,38 +138,31 @@ impl AsyncQueue {
 /// once the subscription is dropped.
 pub struct AsyncSub {
     sub: Subscription,
-    io: PollEvented<mio::Registration>,
+    io: PollEvented2<mio::Registration>,
 }
 
 impl AsyncSub {
     fn next(&mut self) -> io::Result<Msg> {
-        loop {
-            // It's possible our queue was pushed into from another
-            // event, so optimistically check for a message.
-            if let Ok(msg) = self.sub.try_next() {
-                return Ok(msg);
-            }
-            if let Async::NotReady = self.io.poll_read() {
-                return Err(io::Error::new(io::ErrorKind::WouldBlock, "not ready"));
-            }
-            match self.sub.try_next() {
-                Err(e) => {
-                    if e == mpsc::TryRecvError::Empty {
-                        self.io.need_read();
+        // It's possible our queue was pushed into from another
+        // event, so optimistically check for a message.
+        if let Ok(msg) = self.sub.try_next() {
+            return Ok(msg);
+        }
+        let ready = mio::Ready::readable();
+        if let Ok(Async::NotReady) = self.io.poll_read_ready(ready) {
+            return Err(io::Error::new(io::ErrorKind::WouldBlock, "not ready"));
+        }
+        match self.sub.try_next() {
+            Err(e) => {
+                if e == mpsc::TryRecvError::Empty {
+                    self.io.clear_read_ready(ready);
 
-                        return Err(io::Error::new(
-                            io::ErrorKind::WouldBlock,
-                            "no messages",
-                        ));
-                    }
-                    // Only other error from a Receiver is a broken stream
-                    return Err(io::Error::new(
-                        io::ErrorKind::BrokenPipe,
-                        "channel closed",
-                    ));
+                    return Err(io::Error::new(io::ErrorKind::WouldBlock, "no messages"));
                 }
-                Ok(msg) => return Ok(msg),
+                // Only other error from a Receiver is a broken stream
+                Err(io::Error::new(io::ErrorKind::BrokenPipe, "channel closed"))
             }
+            Ok(msg) => Ok(msg),
         }
     }
 }
@@ -184,8 +178,8 @@ impl Stream for AsyncSub {
 
 #[cfg(test)]
 mod tests {
-    use context::{RvCtx, TransportBuilder};
     use async::AsyncQueue;
+    use context::{RvCtx, TransportBuilder};
     use tokio::prelude::*;
     use tokio::reactor::Handle;
 

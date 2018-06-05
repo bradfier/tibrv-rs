@@ -1,17 +1,21 @@
 //! Interface for creating and managing the Rendezvous internal machinery
 
-use tibrv_sys::*;
-use message::Msg;
 use errors::*;
-use std::ffi::{CStr, CString};
-use std::marker::PhantomData;
-use std::ptr::null;
+use event::{Queue, Subscription};
 use failure::*;
+use message::Msg;
+use std::ffi::{CStr, CString};
+use std::ptr::null;
+use tibrv_sys::*;
 
+#[cfg(feature = "tokio")]
+use async::{AsyncQueue, AsyncSub};
 #[cfg(feature = "tokio")]
 use futures::prelude::{Async, AsyncSink, Poll, Sink, StartSend};
 #[cfg(feature = "tokio")]
 use std::io;
+#[cfg(feature = "tokio")]
+use tokio::reactor::Handle;
 
 /// A struct representing a Rendezvous transport object.
 ///
@@ -133,9 +137,12 @@ impl RvCtx {
     }
 }
 
+// TODO: Handle a failed clone?
 impl Clone for RvCtx {
     fn clone(&self) -> RvCtx {
-        unsafe { tibrv_Open(); }
+        unsafe {
+            tibrv_Open();
+        }
         RvCtx {}
     }
 }
@@ -151,8 +158,7 @@ impl Drop for RvCtx {
 impl Transport {
     /// Extract the daemon parameter from the transport.
     pub fn daemon(&self) -> Result<String, TibrvError> {
-        let mut ptr: *const ::std::os::raw::c_char =
-            unsafe { ::std::mem::zeroed() };
+        let mut ptr: *const ::std::os::raw::c_char = unsafe { ::std::mem::zeroed() };
 
         unsafe {
             tibrvTransport_GetDaemon(self.inner, &mut ptr)
@@ -162,8 +168,7 @@ impl Transport {
 
     /// Extract the network parameter from the transport.
     pub fn network(&self) -> Result<String, TibrvError> {
-        let mut ptr: *const ::std::os::raw::c_char =
-            unsafe { ::std::mem::zeroed() };
+        let mut ptr: *const ::std::os::raw::c_char = unsafe { ::std::mem::zeroed() };
 
         unsafe {
             tibrvTransport_GetNetwork(self.inner, &mut ptr)
@@ -173,8 +178,7 @@ impl Transport {
 
     /// Extract the service parameter from the transport.
     pub fn service(&self) -> Result<String, TibrvError> {
-        let mut ptr: *const ::std::os::raw::c_char =
-            unsafe { ::std::mem::zeroed() };
+        let mut ptr: *const ::std::os::raw::c_char = unsafe { ::std::mem::zeroed() };
 
         unsafe {
             tibrvTransport_GetService(self.inner, &mut ptr)
@@ -206,15 +210,11 @@ impl Sink for Transport {
     // From the documentation it looks like tibrvTransport_Send
     // isn't supposed to block, so we have to just assume it's
     // doing internal buffering.
-    fn start_send(
-        &mut self,
-        mut item: Msg,
-    ) -> StartSend<Self::SinkItem, Self::SinkError> {
+    fn start_send(&mut self, mut item: Msg) -> StartSend<Self::SinkItem, Self::SinkError> {
         // Here we do the send immediately, then always return
         // complete when poll_complete is called later.
-        Transport::send(self, &mut item).map_err(|_| {
-            io::Error::new(io::ErrorKind::Other, "Unable to send on transport")
-        })?;
+        Transport::send(self, &mut item)
+            .map_err(|_| io::Error::new(io::ErrorKind::Other, "Unable to send on transport"))?;
         Ok(AsyncSink::Ready)
     }
 
