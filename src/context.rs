@@ -105,9 +105,9 @@ impl TransportBuilder {
         let result = unsafe {
             tibrvTransport_Create(
                 &mut transport,
-                self.service.map_or(null(), |s| s.as_ptr()),
-                self.network.map_or(null(), |n| n.as_ptr()),
-                self.daemon.map_or(null(), |d| d.as_ptr()),
+                self.service.as_ref().map_or(null(), |s| s.as_ptr()),
+                self.network.as_ref().map_or(null(), |n| n.as_ptr()),
+                self.daemon.as_ref().map_or(null(), |d| d.as_ptr()),
             )
         };
         result.and_then(|_| Transport {
