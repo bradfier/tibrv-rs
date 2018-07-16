@@ -255,6 +255,44 @@ mod tests {
     }
 
     #[test]
+    fn fields_by_index() {
+        let data = CString::new("A string").unwrap();
+        let cstr = data.as_c_str();
+        let mut field = Builder::new(&cstr).with_name("StringField").encode();
+
+        let slice: &[u16] = &[1, 2, 3, 4];
+        let mut field2 = Builder::new(&slice)
+            .with_name("Uint16 field")
+            .with_id(2)
+            .encode();
+
+        let mut msg = Msg::new().unwrap();
+        assert!(
+            msg.add_field(&mut field).and_then(|m| m.add_field(&mut field2)).is_ok()
+        );
+
+        assert_eq!(2, msg.num_fields().unwrap());
+
+        {
+            let string_field = msg.get_field_by_index(0);
+            assert!(string_field.is_ok());
+            let string_field = string_field.unwrap();
+            assert!(string_field.name.is_some());
+            assert_eq!(string_field.name.as_ref().unwrap(), &CString::new("StringField").unwrap());
+        }
+
+        {
+            let uint16_field = msg.get_field_by_index(1);
+            assert!(uint16_field.is_ok());
+            let uint16_field = uint16_field.unwrap();
+            assert!(uint16_field.name.is_some());
+            assert_eq!(uint16_field.name.as_ref().unwrap(), &CString::new("Uint16 field").unwrap());
+        }
+
+        assert!(msg.get_field_by_index(2).is_err());
+    }
+
+    #[test]
     fn add_remove_fields() {
         let data = CString::new("A string").unwrap();
         let cstr = data.as_c_str();
