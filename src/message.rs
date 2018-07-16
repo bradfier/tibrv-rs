@@ -66,6 +66,41 @@ impl Msg {
         self.get_field(None, Some(id))
     }
 
+    /// Get a specified field from this message.
+    ///
+    /// Data in scalar fields is copied, and data in pointer fields
+    /// is guaranteed to live at least as long as the parent `Msg`.
+    ///
+    /// This variant retrieves the field by index.
+    pub fn get_field_by_index(&self, index: u32) -> Result<BorrowedMsgField, TibrvError> {
+        let mut field: tibrvMsgField = unsafe { mem::zeroed() };
+
+        unsafe {
+            tibrvMsg_GetFieldByIndex(
+                self.inner,
+                &mut field,
+                index as tibrv_u32,
+            )
+        }.and_then(|_| {
+            if !field.name.is_null() {
+                CString::new(unsafe { CStr::from_ptr(field.name) }.to_string_lossy().into_owned())
+                     .context(ErrorKind::StrContentError)
+                     .map_err(TibrvError::from)
+                     .map(Some)
+            } else {
+                Ok(None)
+            }
+        }).map(|field_name| {
+            BorrowedMsgField {
+                inner: MsgField {
+                    name: field_name,
+                    inner: field,
+                },
+                phantom: PhantomData,
+            }
+        })
+    }
+
     fn get_field<'a>(
         &'a self,
         name: Option<&str>,
