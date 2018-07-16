@@ -28,3 +28,10 @@ futures = { version = "0.1.18", optional = true }
 
 [features]
 async = ["tokio", "futures", "mio"]
+
+[[example]]
+name = "async_echo"
+required-features = [ "async" ]
+
+[[example]]
+name = "echo"
