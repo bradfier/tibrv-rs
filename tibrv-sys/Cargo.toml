@@ -17,3 +17,12 @@ chrono = "0.4"
 
 [build-dependencies]
 bindgen = "0.30"
+
+[features]
+tibrv_8_1 = ["gte_tibrv_8_1"]
+tibrv_8_2 = ["gte_tibrv_8_1", "gte_tibrv_8_2"]
+tibrv_8_3 = ["gte_tibrv_8_1", "gte_tibrv_8_2", "gte_tibrv_8_3"]
+
+gte_tibrv_8_1 = []
+gte_tibrv_8_2 = []
+gte_tibrv_8_3 = []

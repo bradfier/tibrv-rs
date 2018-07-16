@@ -27,7 +27,16 @@ mio = { version = "0.6.14", optional = true }
 futures = { version = "0.1.18", optional = true }
 
 [features]
+default = [ "tibrv_8_3" ]
 async = ["tokio", "futures", "mio"]
+
+tibrv_8_1 = ["tibrv-sys/tibrv_8_1"]
+tibrv_8_2 = ["tibrv-sys/tibrv_8_2", "gte_tibrv_8_2"]
+tibrv_8_3 = ["tibrv-sys/tibrv_8_3", "gte_tibrv_8_2", "gte_tibrv_8_3"]
+
+gte_tibrv_8_1 = []
+gte_tibrv_8_2 = []
+gte_tibrv_8_3 = []
 
 [[example]]
 name = "async_echo"
