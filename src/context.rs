@@ -110,7 +110,7 @@ impl TransportBuilder {
                 self.daemon.as_ref().map_or(null(), |d| d.as_ptr()),
             )
         };
-        result.and_then(|_| Transport {
+        result.map(|_| Transport {
             inner: transport,
             context: ctx,
         })
@@ -124,7 +124,7 @@ pub struct RvCtx {}
 impl RvCtx {
     /// Initialize the Rendezvous context
     pub fn new() -> Result<Self, TibrvError> {
-        unsafe { tibrv_Open() }.and_then(|_| RvCtx {})
+        unsafe { tibrv_Open() }.map(|_| RvCtx {})
     }
 
     /// Get the version of Rendezvous this context has bound to.
@@ -162,7 +162,7 @@ impl Transport {
 
         unsafe {
             tibrvTransport_GetDaemon(self.inner, &mut ptr)
-                .and_then(|_| CStr::from_ptr(ptr).to_string_lossy().into_owned())
+                .map(|_| CStr::from_ptr(ptr).to_string_lossy().into_owned())
         }
     }
 
@@ -172,7 +172,7 @@ impl Transport {
 
         unsafe {
             tibrvTransport_GetNetwork(self.inner, &mut ptr)
-                .and_then(|_| CStr::from_ptr(ptr).to_string_lossy().into_owned())
+                .map(|_| CStr::from_ptr(ptr).to_string_lossy().into_owned())
         }
     }
 
@@ -182,7 +182,7 @@ impl Transport {
 
         unsafe {
             tibrvTransport_GetService(self.inner, &mut ptr)
-                .and_then(|_| CStr::from_ptr(ptr).to_string_lossy().into_owned())
+                .map(|_| CStr::from_ptr(ptr).to_string_lossy().into_owned())
         }
     }
 
@@ -191,7 +191,7 @@ impl Transport {
     /// Note that `Msg` must be mutable due to the signature
     /// of the C library functions.
     pub fn send(&self, msg: &mut Msg) -> Result<(), TibrvError> {
-        unsafe { tibrvTransport_Send(self.inner, msg.inner) }.and_then(|_| ())
+        unsafe { tibrvTransport_Send(self.inner, msg.inner) }.map(|_| ())
     }
 
     /// Subscribe to a message subject.

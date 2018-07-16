@@ -4,7 +4,7 @@ use errors::*;
 use failure::ResultExt;
 use field::*;
 use std;
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 use std::marker::PhantomData;
 use std::mem;
 use tibrv_sys::*;
@@ -25,12 +25,12 @@ impl Msg {
     /// Construct a new owned Rendezvous Message
     pub fn new() -> Result<Self, TibrvError> {
         let mut ptr: tibrvMsg = unsafe { mem::zeroed() };
-        unsafe { tibrvMsg_Create(&mut ptr) }.and_then(|_| Msg { inner: ptr })
+        unsafe { tibrvMsg_Create(&mut ptr) }.map(|_| Msg { inner: ptr })
     }
 
     pub fn try_clone(&self) -> Result<Self, TibrvError> {
         let mut ptr: tibrvMsg = unsafe { mem::zeroed() };
-        unsafe { tibrvMsg_CreateCopy(self.inner, &mut ptr) }.and_then(|_| Msg { inner: ptr })
+        unsafe { tibrvMsg_CreateCopy(self.inner, &mut ptr) }.map(|_| Msg { inner: ptr })
     }
 
     /// Add a `MsgField` to this message.
@@ -43,7 +43,7 @@ impl Msg {
     /// slice types must be `Copy`. A borrowed `MsgField` does not need
     /// to live beyond the point where it is added to the `Msg`.
     pub fn add_field(&mut self, field: &mut MsgField) -> Result<&mut Self, TibrvError> {
-        unsafe { tibrvMsg_AddField(self.inner, &mut field.inner) }.and_then(|_| self)
+        unsafe { tibrvMsg_AddField(self.inner, &mut field.inner) }.map(|_| self)
     }
 
     /// Get a specified field from this message.
@@ -89,7 +89,7 @@ impl Msg {
                 &mut field,
                 id.unwrap_or(0) as tibrv_u16,
             )
-        }.and_then(|_| BorrowedMsgField {
+        }.map(|_| BorrowedMsgField {
             inner: MsgField {
                 name: field_name,
                 inner: field,
@@ -130,13 +130,13 @@ impl Msg {
 
         let name_ptr = field_name.as_ref().map_or(std::ptr::null(), |m| m.as_ptr());
         unsafe { tibrvMsg_RemoveFieldEx(self.inner, name_ptr, id.unwrap_or(0) as u16) }
-            .and_then(|_| ())
+            .map(|_| ())
     }
 
     /// Get the number of fields within this message.
     pub fn num_fields(&mut self) -> Result<u32, TibrvError> {
         let mut ptr: tibrv_u32 = unsafe { mem::zeroed() };
-        unsafe { tibrvMsg_GetNumFields(self.inner, &mut ptr) }.and_then(|_| ptr as u32)
+        unsafe { tibrvMsg_GetNumFields(self.inner, &mut ptr) }.map(|_| ptr as u32)
     }
 
     /// Expand the internal storage of a message.
@@ -146,7 +146,7 @@ impl Msg {
     /// number of fields it may be useful to preallocate enough
     /// space to hold them all.
     pub fn expand(&mut self, amount: i32) -> Result<&mut Self, TibrvError> {
-        unsafe { tibrvMsg_Expand(self.inner, amount as tibrv_i32) }.and_then(|_| self)
+        unsafe { tibrvMsg_Expand(self.inner, amount as tibrv_i32) }.map(|_| self)
     }
 
     /// Get the size of the message (in bytes).
@@ -154,7 +154,7 @@ impl Msg {
     /// Does not include space allocated but not yet used.
     pub fn byte_size(&self) -> Result<u32, TibrvError> {
         let mut ptr: tibrv_u32 = unsafe { mem::zeroed() };
-        unsafe { tibrvMsg_GetByteSize(self.inner, &mut ptr) }.and_then(|_| ptr as u32)
+        unsafe { tibrvMsg_GetByteSize(self.inner, &mut ptr) }.map(|_| ptr as u32)
     }
 
     /// Set the send subject for the message.
@@ -162,7 +162,7 @@ impl Msg {
     /// No wildcards are permitted in sender subjects.
     pub fn set_send_subject(&mut self, subject: &str) -> Result<(), TibrvError> {
         let subject_c = CString::new(subject).context(ErrorKind::StrContentError)?;
-        unsafe { tibrvMsg_SetSendSubject(self.inner, subject_c.as_ptr()) }.and_then(|_| ())
+        unsafe { tibrvMsg_SetSendSubject(self.inner, subject_c.as_ptr()) }.map(|_| ())
     }
 }
 
@@ -195,7 +195,7 @@ impl BorrowedMsg {
     /// This function is effectively an allocate and copy.
     pub fn to_owned(&self) -> Result<Msg, TibrvError> {
         let mut ptr: tibrvMsg = unsafe { mem::zeroed() };
-        unsafe { tibrvMsg_CreateCopy(self.inner, &mut ptr) }.and_then(|_| Msg { inner: ptr })
+        unsafe { tibrvMsg_CreateCopy(self.inner, &mut ptr) }.map(|_| Msg { inner: ptr })
     }
 
     /// Detach an inbound message from Rendezvous storage.
@@ -204,7 +204,7 @@ impl BorrowedMsg {
     /// received in a callback invoked from Rendezvous.
     pub unsafe fn detach(self) -> Result<Msg, TibrvError> {
         let ptr = self.inner;
-        tibrvMsg_Detach(ptr).and_then(|_| Msg { inner: ptr })
+        tibrvMsg_Detach(ptr).map(|_| Msg { inner: ptr })
     }
 }
 

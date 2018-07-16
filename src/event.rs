@@ -42,7 +42,7 @@ impl Queue {
     /// queues.
     pub(crate) fn new(ctx: RvCtx) -> Result<Self, TibrvError> {
         let mut ptr: tibrvQueue = unsafe { mem::zeroed() };
-        unsafe { tibrvQueue_Create(&mut ptr) }.and_then(|_| Queue {
+        unsafe { tibrvQueue_Create(&mut ptr) }.map(|_| Queue {
             inner: ptr,
             _context: ctx,
         })
@@ -52,7 +52,7 @@ impl Queue {
     #[allow(dead_code)]
     pub(crate) fn count(&self) -> Result<u32, TibrvError> {
         let mut ptr: u32 = 0;
-        unsafe { tibrvQueue_GetCount(self.inner, &mut ptr) }.and_then(|_| ptr)
+        unsafe { tibrvQueue_GetCount(self.inner, &mut ptr) }.map(|_| ptr)
     }
 
     /// Subscribe to a message subject.
@@ -79,7 +79,7 @@ impl Queue {
                 subject_c.as_ptr(),
                 send_ptr as *const ::std::os::raw::c_void,
             )
-        }.and_then(|_| Subscription {
+        }.map(|_| Subscription {
             event: ptr,
             queue: self,
             channel: recv,
@@ -108,12 +108,12 @@ pub struct Subscription {
 impl Subscription {
     // Blocking dispatch
     fn dispatch(&self) -> Result<(), TibrvError> {
-        unsafe { tibrvQueue_TimedDispatch(self.queue.inner, -1.0) }.and_then(|_| ())
+        unsafe { tibrvQueue_TimedDispatch(self.queue.inner, -1.0) }.map(|_| ())
     }
 
     // Non blocking try-dispatch.
     fn poll(&self) -> Result<(), TibrvError> {
-        unsafe { tibrvQueue_TimedDispatch(self.queue.inner, 0.0) }.and_then(|_| ())
+        unsafe { tibrvQueue_TimedDispatch(self.queue.inner, 0.0) }.map(|_| ())
     }
 
     /// Get the next message available on this subscription.
