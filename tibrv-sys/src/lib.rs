@@ -1,6 +1,7 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
+#![allow(unreachable_patterns)]
 
 extern crate chrono;
 
@@ -102,18 +103,19 @@ impl fmt::Display for tibrv_status {
             tibrv_status::TIBRV_ALREADY_EXISTS => write!(f, "TIBRV_ALREADY_EXISTS"),
             tibrv_status::TIBRV_PORT_BUSY => write!(f, "TIBRV_PORT_BUSY"),
             tibrv_status::TIBRV_DELIVERY_FAILED => write!(f, "TIBRV_DELIVERY_FAILED"),
-            #[cfg(feature = "gte_tibrv_8_3")]
+            #[cfg(feature = "tibrv_8_3")]
             tibrv_status::TIBRV_QUEUE_LIMIT => write!(f, "TIBRV_QUEUE_LIMIT"),
-            #[cfg(feature = "gte_tibrv_8_3")]
+            #[cfg(feature = "tibrv_8_3")]
             tibrv_status::TIBRV_INVALID_CONTENT_DESC => write!(f, "TIBRV_INVALID_CONTENT_DESC"),
-            #[cfg(feature = "gte_tibrv_8_3")]
+            #[cfg(feature = "tibrv_8_3")]
             tibrv_status::TIBRV_INVALID_SERIALIZED_BUFFER => write!(f, "TIBRV_INVALID_SERIALIZED_BUFFER"),
-            #[cfg(feature = "gte_tibrv_8_3")]
+            #[cfg(feature = "tibrv_8_3")]
             tibrv_status::TIBRV_DESCRIPTOR_NOT_FOUND => write!(f, "TIBRV_DESCRIPTOR_NOT_FOUND"),
-            #[cfg(feature = "gte_tibrv_8_3")]
+            #[cfg(feature = "tibrv_8_3")]
             tibrv_status::TIBRV_CORRUPT_SERIALIZED_BUFFER => write!(f, "TIBRV_CORRUPT_SERIALIZED_BUFFER"),
-            #[cfg(feature = "gte_tibrv_8_3")]
+            #[cfg(feature = "tibrv_8_3")]
             tibrv_status::TIBRV_IPM_ONLY => write!(f, "TIBRV_IPM_ONLY"),
+            _ => write!(f, "TIBRV_UNSUPPORTED_STATUS_CODE"),
         }
     }
 }
@@ -133,7 +135,7 @@ mod tests {
         };
     }
 
-    #[cfg(feature = "gte_tibrv_8_3")]
+    #[cfg(feature = "tibrv_8_3")]
     #[test]
     fn test_is_ipm() {
         unsafe {

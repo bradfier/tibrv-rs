@@ -10,6 +10,30 @@ provided by TIBCO.
 
 tibrv-rs is still developing, and until version 1.0.0 the API is likely to change.
 
+## Library Versions
+By default, the library exposes only functions available in version 8.1 of TIBCO Rendezvous.
+
+Newer features are available, but you must opt-in by selecting one of the feature flags below:
+
+| Rendezvous Version | Supported | Tested | Feature Flag |
+|:------------------:|:---------:|:------:|:------------:|
+| 8.1.x              | Yes       | Yes    | None         |
+| 8.2.x              | Yes       | *No*   | `tibrv_8_2`  |
+| 8.3.x              | Yes       | Yes    | `tibrv_8_3`  |
+| 8.4.x              | Yes       | Yes    | `tibrv_8_4`  |
+
+Rendezvous 8.2.x is supported by the library, but we do not have
+resources available to fully test it. If you need 8.2 support for your project,
+please open an issue so we can help you ensure compatibility.
+
+You can specify a feature version in your Cargo.toml:
+
+```toml
+[dependencies.tibrv]
+version = "0.x.y"
+features = ["tibrv_8_4"]
+```
+
 ## License
 `tibrv-rs` is licensed under either of
  * Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)

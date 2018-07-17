@@ -23,6 +23,20 @@
 //! export LD_LIBRARY_PATH=$TIBRV/lib:$LD_LIBRARY_PATH
 //! ```
 //!
+//! ## Crate Config
+//!
+//! By default this crate targets the APIs available in Rendezvous 8.1.
+//! You can access additional functionality by selecting one of the following
+//! features: `tibrv_8_2`, `tibrv_8_3` or `tibrv_8_4`.
+//!
+//! `Cargo.toml`:
+//!
+//! ```toml
+//! [dependencies.tibrv]
+//! version = "x.y.z"
+//! features = ["tibrv_8_3"]
+//! ```
+//!
 //! ## Working with Messages
 //!
 //! A message is the main structure used to encapsulate data sent or received
