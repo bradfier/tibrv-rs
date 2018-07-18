@@ -13,6 +13,25 @@ Upcoming Changes
 * Rendezvous Request / Reply
 * Rendezvous Distributed Queues
 
+`0.4.0`_ (2018-07-18)
+---------------------
+
+* Added ``get_field_by_index`` for ``tibrv::Msg``
+* Fixed an early-drop bug where ``TransportBuilder`` was used with
+  optional parameters, the ``network``, ``service`` or ``daemon``
+  strings could be dropped before being handed off to the C library.
+* Fixed examples to build with appropriate feature flags enabled.
+
+Also in this release are two **breaking changes**:
+
+* For consistency with the standard library, in ``TibrvResult`` we have
+  renamed ``and_then`` to ``map`` and introduced a new ``and_then``
+  function which takes a closure returning a ``Result<T, TibrvError>``,
+  while ``map`` now accepts a closure returning ``T``.
+* Added *feature gating* for different versions of the Rendezvous
+  library, see `README.md <https://github.com/bradfier/tibrv-rs/blob/master/README.md>`_
+  for more information.
+
 `0.3.0`_ (2018-06-06)
 ---------------------
 
@@ -40,6 +59,7 @@ Initial public release.
 * First usable release on `crates.io <https://crates.io/crates/tibrv>`_.
 
 
+.. _`0.4.0`: https://github.com/bradfier/tibrv-rs/compare/v0.3.0...v0.4.0
 .. _`0.3.0`: https://github.com/bradfier/tibrv-rs/compare/v0.2.0...v0.3.0
 .. _`0.2.0`: https://github.com/bradfier/tibrv-rs/compare/v0.1.1...v0.2.0
 .. _`0.1.1`: https://github.com/bradfier/tibrv-rs/compare/2947f836...v0.1.1
