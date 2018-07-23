@@ -118,7 +118,7 @@ impl From<tibrv_status> for ErrorKind {
 }
 
 /// Allows easy mapping of `tibrv_error` return codes into
-/// `Result<U, TibrvError` types.
+/// `Result<U, TibrvError>` types.
 ///
 /// Executes supplied closure if the `tibrv_status` is not `TIBRV_OK`.
 impl TibrvResult for tibrv_status {

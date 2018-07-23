@@ -5,6 +5,7 @@ use failure::ResultExt;
 use field::*;
 use std;
 use std::ffi::{CStr, CString};
+use std::os::raw::c_char;
 use std::marker::PhantomData;
 use std::mem;
 use tibrv_sys::*;
@@ -234,12 +235,42 @@ impl Msg {
         unsafe { tibrvMsg_GetByteSize(self.inner, &mut ptr) }.map(|_| ptr as u32)
     }
 
+    /// Gets the send subject for the message.
+    ///
+    /// Will return `Err` if the send subject is empty.
+    pub fn get_send_subject(&self) -> Result<String, TibrvError> {
+        let mut ptr: *const c_char = unsafe { mem::zeroed() };
+        unsafe {
+            tibrvMsg_GetSendSubject(self.inner, &mut ptr).map(|_| ())?;
+            Ok(CStr::from_ptr(ptr).to_string_lossy().into_owned())
+        }
+    }
+
     /// Set the send subject for the message.
     ///
     /// No wildcards are permitted in sender subjects.
     pub fn set_send_subject(&mut self, subject: &str) -> Result<(), TibrvError> {
         let subject_c = CString::new(subject).context(ErrorKind::StrContentError)?;
         unsafe { tibrvMsg_SetSendSubject(self.inner, subject_c.as_ptr()) }.map(|_| ())
+    }
+
+    /// Gets the reply subject for the message.
+    ///
+    /// Will return `Err` if the reply subject is empty.
+    pub fn get_reply_subject(&self) -> Result<String, TibrvError> {
+        let mut ptr: *const c_char = unsafe { mem::zeroed() };
+        unsafe {
+            tibrvMsg_GetReplySubject(self.inner, &mut ptr).map(|_| ())?;
+            Ok(CStr::from_ptr(ptr).to_string_lossy().into_owned())
+        }
+    }
+
+    /// Sets the reply subject for the message.
+    ///
+    /// No wildcards are permitted in reply subjects.
+    pub fn set_reply_subject(&mut self, subject: &str) -> Result<(), TibrvError> {
+        let subject_c = CString::new(subject).context(ErrorKind::StrContentError)?;
+        unsafe { tibrvMsg_SetReplySubject(self.inner, subject_c.as_ptr()) }.map(|_| ())
     }
 }
 
@@ -475,5 +506,21 @@ mod tests {
     fn empty_size() {
         let msg = Msg::new().unwrap();
         assert_eq!(8, msg.byte_size().unwrap());
+    }
+
+    #[test]
+    fn roundtrip_send_subject() {
+        let mut msg = Msg::new().unwrap();
+        assert!(msg.get_send_subject().is_err()); // Is empty == TIBRV_NOT_FOUND
+        assert!(msg.set_send_subject("TEST.SEND").is_ok());
+        assert_eq!("TEST.SEND", msg.get_send_subject().unwrap());
+    }
+
+    #[test]
+    fn roundtrip_reply_subject() {
+        let mut msg = Msg::new().unwrap();
+        assert!(msg.get_reply_subject().is_err()); // Is empty == TIBRV_NOT_FOUND
+        assert!(msg.set_reply_subject("TEST.REPLY").is_ok());
+        assert_eq!("TEST.REPLY", msg.get_reply_subject().unwrap());
     }
 }
