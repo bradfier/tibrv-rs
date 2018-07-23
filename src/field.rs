@@ -465,7 +465,7 @@ mod tests {
     #[test]
     fn test_ipport_encode() {
         let port = 1;
-        let tibport = tibrv_encode_port(&port, Some("Port"), None);
+        let tibport = tibrv_encode_port(port, Some("Port"), None);
         unsafe {
             assert_eq!(256, tibport.inner.data.ipport16);
         }
