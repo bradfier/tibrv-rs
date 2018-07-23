@@ -118,7 +118,7 @@ impl TransportBuilder {
 }
 
 /// A struct representing the Rendezvous internal machinery which must be
-/// set up before attempting to create `Transports` or `Queues`
+/// set up before attempting to create `Transports` or `Subscriptions`
 pub struct RvCtx {}
 
 impl RvCtx {

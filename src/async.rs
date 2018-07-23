@@ -2,13 +2,6 @@
 //!
 //! This module contains all the Tokio support for interacting
 //! with Rendezvous event streams asynchronously.
-//!
-//! Note that the current implementation harmlessly leaks one
-//! pointer for each subject that a particular queue unsubscribes from
-//! (i.e. by letting the `AsyncSub` drop while the `AsyncQueue`
-//! remains alive). If your application repeatedly subscribes and
-//! unsubscribes from subjects, consider periodically re-creating
-//! the event queue to free these orphan references.
 
 use futures::stream::Stream;
 use futures::{Async, Poll};
@@ -129,13 +122,8 @@ impl AsyncQueue {
     }
 }
 
-/// A stream returned from the `AsyncQueue::subscribe` function representing
+/// A stream returned from the `Transport::async_sub` function representing
 /// the incoming messages on the selected subject.
-///
-/// Note that dropping an `AsyncSub` causes one pointer to be harmlessly
-/// leaked until the parent `AsyncQueue` is dropped. This is due to the
-/// queue holding one side of a `mio::Registration` which becomes defunct
-/// once the subscription is dropped.
 pub struct AsyncSub {
     sub: Subscription,
     io: PollEvented2<mio::Registration>,
@@ -155,7 +143,7 @@ impl AsyncSub {
         match self.sub.try_next() {
             Err(e) => {
                 if e == mpsc::TryRecvError::Empty {
-                    self.io.clear_read_ready(ready);
+                    self.io.clear_read_ready(ready)?;
 
                     return Err(io::Error::new(io::ErrorKind::WouldBlock, "no messages"));
                 }
@@ -180,7 +168,6 @@ impl Stream for AsyncSub {
 mod tests {
     use async::AsyncQueue;
     use context::{RvCtx, TransportBuilder};
-    use tokio::prelude::*;
     use tokio::reactor::Handle;
 
     #[test]

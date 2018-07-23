@@ -89,7 +89,7 @@ impl From<ErrorKind> for TibrvError {
 
 impl From<Context<ErrorKind>> for TibrvError {
     fn from(inner: Context<ErrorKind>) -> TibrvError {
-        TibrvError { inner: inner }
+        TibrvError { inner }
     }
 }
 // =====================================

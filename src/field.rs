@@ -63,7 +63,7 @@ where
         Builder {
             name: None,
             id: None,
-            data: data,
+            data,
         }
     }
 
@@ -320,7 +320,7 @@ encodable!(Ipv4Addr, tibrv_ipaddr32, ipaddr32, TIBRVMSG_IPADDR32);
 ///
 /// Since we already provide an Impl for 'normal' `u16` this function will
 /// encode using the special byte ordering.
-pub fn tibrv_encode_port(port: &u16, name: Option<&str>, id: Option<u32>) -> MsgField {
+pub fn tibrv_encode_port(port: u16, name: Option<&str>, id: Option<u32>) -> MsgField {
     must_name!(name, id);
     let name_cstr = name.and_then(|s| Some(CString::new(s).unwrap()));
     let ptr = name_cstr.as_ref().map_or(std::ptr::null(), |s| s.as_ptr());
