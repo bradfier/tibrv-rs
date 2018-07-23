@@ -5,6 +5,7 @@ use event::{Queue, Subscription};
 use failure::*;
 use message::Msg;
 use std::ffi::{CStr, CString};
+use std::mem;
 use std::ptr::null;
 use tibrv_sys::*;
 
@@ -206,6 +207,19 @@ impl Transport {
         Queue::new(self.context.clone())?.subscribe(&self, subject)
     }
 
+    pub fn request(&self, msg: &mut Msg, timeout: Option<f64>) -> Result<Msg, TibrvError> {
+        let mut ptr: tibrvMsg = unsafe { mem::zeroed() };
+        unsafe {
+            tibrvTransport_SendRequest(
+                self.inner,
+                msg.inner,
+                &mut ptr,
+                timeout.unwrap_or(-1.0),
+            )
+            .map(|_| Msg { inner: ptr })
+        }
+    }
+
     #[cfg(feature = "tokio")]
     /// Asynchronously subscribe to a message subject.
     ///
@@ -265,5 +279,23 @@ mod tests {
         let ctx = RvCtx::new().unwrap();
         let tp = TransportBuilder::new(ctx).create();
         let _ = tp.map_err(|e| assert_eq!(ErrorKind::TransportError, e.kind()));
+    }
+
+    #[test]
+    #[ignore]
+    fn timeout_request() {
+        let ctx = RvCtx::new().unwrap();
+        let tp = TransportBuilder::new(ctx).create().unwrap();
+
+        let mut msg = Msg::new().unwrap();
+        msg.set_send_subject("REQUEST.TEST");
+        let req = tp.request(&mut msg, Some(1.0));
+        assert!(req.is_err());
+        let _ = req.map_err(|e| {
+            assert_eq!(
+                ErrorKind::UnknownError(tibrv_status::TIBRV_TIMEOUT),
+                e.kind()
+            )
+        });
     }
 }
