@@ -131,9 +131,6 @@ pub mod message;
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn it_works() {}
-
     // Both the send and recv tests require a running RVD on the
     // default port on localhost.
     #[test]

@@ -9,6 +9,41 @@ use std::marker::PhantomData;
 use std::mem;
 use tibrv_sys::*;
 
+pub struct MsgIter<'m> {
+    msg: &'m Msg,
+    index: u32,
+}
+
+impl<'m> Iterator for MsgIter<'m> {
+    type Item = Result<BorrowedMsgField<'m>, TibrvError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let num_fields = match self.msg.num_fields() {
+            Ok(n) => n,
+            Err(e) => return Some(Err(e)),
+        };
+        let r = if self.index >= num_fields {
+            None
+        } else {
+            Some(self.msg.get_field_by_index(self.index))
+        };
+        self.index += 1;
+        r
+    }
+}
+
+impl<'m> IntoIterator for &'m Msg {
+    type IntoIter = MsgIter<'m>;
+    type Item = <Self::IntoIter as Iterator>::Item;
+
+    fn into_iter(self) -> Self::IntoIter {
+        MsgIter {
+            msg: self,
+            index: 0,
+        }
+    }
+}
+
 /// A struct representing an owned Rendezvous Message.
 ///
 /// The memory allocated to this type of Message is the responsibility
@@ -169,7 +204,7 @@ impl Msg {
     }
 
     /// Get the number of fields within this message.
-    pub fn num_fields(&mut self) -> Result<u32, TibrvError> {
+    pub fn num_fields(&self) -> Result<u32, TibrvError> {
         let mut ptr: tibrv_u32 = unsafe { mem::zeroed() };
         unsafe { tibrvMsg_GetNumFields(self.inner, &mut ptr) }.map(|_| ptr as u32)
     }
@@ -252,6 +287,30 @@ mod tests {
     fn create_msg() {
         let msg = Msg::new();
         assert!(msg.is_ok());
+    }
+
+    #[test]
+    fn iterate_fields() {
+        let data = CString::new("A string").unwrap();
+        let cstr = data.as_c_str();
+        let mut field = Builder::new(&cstr).with_name("StringField").encode();
+
+        let slice: &[u16] = &[1, 2, 3, 4];
+        let mut field2 = Builder::new(&slice)
+            .with_name("Uint16 field")
+            .with_id(2)
+            .encode();
+
+        let mut msg = Msg::new().unwrap();
+        msg.add_field(&mut field).and_then(|m| m.add_field(&mut field2)).unwrap();
+
+        let mut names = vec![];
+        for f in &msg {
+            names.push(f.unwrap().name.clone().unwrap().into_string().unwrap());
+        }
+
+        assert_eq!(2, names.len());
+        assert_eq!(&names[..], &["StringField", "Uint16 field"]);
     }
 
     #[test]
