@@ -4,7 +4,7 @@
 //! with Rendezvous event streams asynchronously.
 
 use futures::stream::Stream;
-use futures::{Async, Poll};
+use futures::{Async, Future, Poll};
 use mio;
 use std::io;
 use std::sync::{mpsc, Arc, Mutex};
@@ -166,6 +166,32 @@ impl Stream for AsyncSub {
 
     fn poll(&mut self) -> Poll<Option<Msg>, Self::Error> {
         Ok(self.next()?)
+    }
+}
+
+/// A `Future` representing an incomplete Rendezvous request.
+///
+/// This structure is produced by the `Transport::async_req` method.
+pub struct AsyncReq {
+    sub: AsyncSub,
+}
+
+impl AsyncReq {
+    pub fn new(sub: AsyncSub) -> Self {
+        AsyncReq { sub }
+    }
+}
+
+impl Future for AsyncReq {
+    type Item = Msg;
+    type Error = TibrvError;
+
+    fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
+        match self.sub.poll().unwrap() {
+            Async::Ready(Some(v)) => Ok(Async::Ready(v)),
+            Async::Ready(None) => unimplemented!(), // Fix after adding async errors to TibrvError!
+            Async::NotReady => Ok(Async::NotReady),
+        }
     }
 }
 

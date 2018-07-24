@@ -5,9 +5,9 @@ use failure::ResultExt;
 use field::*;
 use std;
 use std::ffi::{CStr, CString};
-use std::os::raw::c_char;
 use std::marker::PhantomData;
 use std::mem;
+use std::os::raw::c_char;
 use tibrv_sys::*;
 
 pub struct MsgIter<'a> {
@@ -237,12 +237,17 @@ impl Msg {
 
     /// Gets the send subject for the message.
     ///
-    /// Will return `Err` if the send subject is empty.
-    pub fn get_send_subject(&self) -> Result<String, TibrvError> {
+    /// Will return `Ok(None)` if the send subject is empty.
+    pub fn get_send_subject(&self) -> Result<Option<String>, TibrvError> {
         let mut ptr: *const c_char = unsafe { mem::zeroed() };
         unsafe {
-            tibrvMsg_GetSendSubject(self.inner, &mut ptr).map(|_| ())?;
-            Ok(CStr::from_ptr(ptr).to_string_lossy().into_owned())
+            let result = tibrvMsg_GetSendSubject(self.inner, &mut ptr);
+            if result == tibrv_status::TIBRV_NOT_FOUND {
+                return Ok(None);
+            } else {
+                result.map(|_| ())?;
+            }
+            Ok(Some(CStr::from_ptr(ptr).to_string_lossy().into_owned()))
         }
     }
 
@@ -256,12 +261,17 @@ impl Msg {
 
     /// Gets the reply subject for the message.
     ///
-    /// Will return `Err` if the reply subject is empty.
-    pub fn get_reply_subject(&self) -> Result<String, TibrvError> {
+    /// Will return `Ok(None)` if the reply subject is empty.
+    pub fn get_reply_subject(&self) -> Result<Option<String>, TibrvError> {
         let mut ptr: *const c_char = unsafe { mem::zeroed() };
         unsafe {
-            tibrvMsg_GetReplySubject(self.inner, &mut ptr).map(|_| ())?;
-            Ok(CStr::from_ptr(ptr).to_string_lossy().into_owned())
+            let result = tibrvMsg_GetReplySubject(self.inner, &mut ptr);
+            if result == tibrv_status::TIBRV_NOT_FOUND {
+                return Ok(None);
+            } else {
+                result.map(|_| ())?;
+            }
+            Ok(Some(CStr::from_ptr(ptr).to_string_lossy().into_owned()))
         }
     }
 
@@ -511,16 +521,16 @@ mod tests {
     #[test]
     fn roundtrip_send_subject() {
         let mut msg = Msg::new().unwrap();
-        assert!(msg.get_send_subject().is_err()); // Is empty == TIBRV_NOT_FOUND
+        assert!(msg.get_send_subject().unwrap().is_none()); // Is empty == TIBRV_NOT_FOUND
         assert!(msg.set_send_subject("TEST.SEND").is_ok());
-        assert_eq!("TEST.SEND", msg.get_send_subject().unwrap());
+        assert_eq!("TEST.SEND", msg.get_send_subject().unwrap().unwrap());
     }
 
     #[test]
     fn roundtrip_reply_subject() {
         let mut msg = Msg::new().unwrap();
-        assert!(msg.get_reply_subject().is_err()); // Is empty == TIBRV_NOT_FOUND
+        assert!(msg.get_reply_subject().unwrap().is_none()); // Is empty == TIBRV_NOT_FOUND
         assert!(msg.set_reply_subject("TEST.REPLY").is_ok());
-        assert_eq!("TEST.REPLY", msg.get_reply_subject().unwrap());
+        assert_eq!("TEST.REPLY", msg.get_reply_subject().unwrap().unwrap());
     }
 }

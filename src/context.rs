@@ -10,7 +10,7 @@ use std::ptr::null;
 use tibrv_sys::*;
 
 #[cfg(feature = "tokio")]
-use async::{AsyncQueue, AsyncSub};
+use async::{AsyncQueue, AsyncReq, AsyncSub};
 #[cfg(feature = "tokio")]
 use futures::prelude::{Async, AsyncSink, Poll, Sink, StartSend};
 #[cfg(feature = "tokio")]
@@ -187,6 +187,23 @@ impl Transport {
         }
     }
 
+    /// Creates an unique inbox subject name.
+    ///
+    /// The created subject name will be unique for this transport.
+    pub fn create_inbox(&self) -> Result<String, TibrvError> {
+        let mut buf: Vec<::std::os::raw::c_char> = Vec::with_capacity(128);
+        buf.resize(128, 0);
+        unsafe {
+            tibrvTransport_CreateInbox(self.inner, buf.as_mut_ptr(), 128).map(|_| {
+                CString::from_vec_unchecked(buf.into_iter().map(|c| c as u8).collect())
+                    .into_string()
+                    .expect("C String from CreateInbox contained invalid data")
+                    .trim_right_matches('\0')
+                    .to_owned()
+            })
+        }
+    }
+
     /// Send a `Msg` through this transport.
     ///
     /// Note that `Msg` must be mutable due to the signature
@@ -207,7 +224,15 @@ impl Transport {
         Queue::new(self.context.clone())?.subscribe(&self, subject)
     }
 
-    pub fn request(&self, msg: &mut Msg, timeout: Option<f64>) -> Result<Msg, TibrvError> {
+    /// Send a synchronous request on the given subject, blocking until
+    /// a response is received or `timeout` seconds have elapsed.
+    ///
+    /// A `None` parameter for `timeout` means block indefinitely.
+    pub fn request(
+        &self,
+        msg: &mut Msg,
+        timeout: Option<f64>,
+    ) -> Result<Msg, TibrvError> {
         let mut ptr: tibrvMsg = unsafe { mem::zeroed() };
         unsafe {
             tibrvTransport_SendRequest(
@@ -215,8 +240,33 @@ impl Transport {
                 msg.inner,
                 &mut ptr,
                 timeout.unwrap_or(-1.0),
-            )
-            .map(|_| Msg { inner: ptr })
+            ).map(|_| Msg { inner: ptr })
+        }
+    }
+
+    /// Listen on this subject and respond to requests using the
+    /// supplied closure.
+    ///
+    /// The closure consumes the incoming request, and you may either re-use
+    /// the same structure or create a new `Msg` for your response.
+    ///
+    /// If `reply_subject` is not set on the received message (i.e it is a
+    /// plain message rather than a request), it is not processed and is
+    /// dropped.
+    pub fn serve<F>(&self, subject: &str, f: F) -> Result<(), TibrvError>
+    where
+        F: Fn(Msg) -> Result<Msg, TibrvError>,
+    {
+        let sub = self.subscribe(subject)?;
+        loop {
+            let incoming = sub.next()?;
+            let reply_subj = incoming.get_reply_subject()?;
+
+            if reply_subj.is_some() {
+                let mut reply = f(incoming)?;
+                reply.set_send_subject(&reply_subj.unwrap())?;
+                self.send(&mut reply)?
+            }
         }
     }
 
@@ -231,6 +281,24 @@ impl Transport {
         subject: &str,
     ) -> Result<AsyncSub, TibrvError> {
         AsyncQueue::new(self.context.clone())?.subscribe(handle, &self, subject)
+    }
+
+    #[cfg(feature = "tokio")]
+    /// Asynchronously send a request on the given subject.
+    ///
+    /// Returns an `AsyncReq` future representing the response.
+    pub fn async_req(
+        &self,
+        handle: &Handle,
+        msg: &mut Msg,
+    ) -> Result<AsyncReq, TibrvError> {
+        let inbox = self.create_inbox()?;
+        let sub = self.async_sub(handle, &inbox)?;
+
+        msg.set_reply_subject(&inbox)?;
+        self.send(msg)?;
+
+        Ok(AsyncReq::new(sub))
     }
 }
 
@@ -283,12 +351,23 @@ mod tests {
 
     #[test]
     #[ignore]
+    fn create_inbox() {
+        let ctx = RvCtx::new().unwrap();
+        let tp = TransportBuilder::new(ctx).create().unwrap();
+        let inbox = tp.create_inbox().unwrap();
+        assert!(inbox.len() > 0);
+        assert!(inbox.contains("INBOX"));
+        println!("{:?}", inbox);
+    }
+
+    #[test]
+    #[ignore]
     fn timeout_request() {
         let ctx = RvCtx::new().unwrap();
         let tp = TransportBuilder::new(ctx).create().unwrap();
 
         let mut msg = Msg::new().unwrap();
-        msg.set_send_subject("REQUEST.TEST");
+        msg.set_send_subject("REQUEST.TEST").unwrap();
         let req = tp.request(&mut msg, Some(1.0));
         assert!(req.is_err());
         let _ = req.map_err(|e| {

@@ -38,3 +38,13 @@ required-features = [ "async" ]
 
 [[example]]
 name = "echo"
+
+[[example]]
+name = "server"
+
+[[example]]
+name = "client"
+
+[[example]]
+name = "async_client"
+required-features = [ "async" ]
