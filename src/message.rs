@@ -110,30 +110,27 @@ impl Msg {
     pub fn get_field_by_index(&self, index: u32) -> Result<BorrowedMsgField, TibrvError> {
         let mut field: tibrvMsgField = unsafe { mem::zeroed() };
 
-        unsafe {
-            tibrvMsg_GetFieldByIndex(
-                self.inner,
-                &mut field,
-                index as tibrv_u32,
-            )
-        }.and_then(|_| {
-            if !field.name.is_null() {
-                CString::new(unsafe { CStr::from_ptr(field.name) }.to_string_lossy().into_owned())
-                     .context(ErrorKind::StrContentError)
-                     .map_err(TibrvError::from)
-                     .map(Some)
-            } else {
-                Ok(None)
-            }
-        }).map(|field_name| {
-            BorrowedMsgField {
+        unsafe { tibrvMsg_GetFieldByIndex(self.inner, &mut field, index as tibrv_u32) }
+            .and_then(|_| {
+                if !field.name.is_null() {
+                    CString::new(
+                        unsafe { CStr::from_ptr(field.name) }
+                            .to_string_lossy()
+                            .into_owned(),
+                    ).context(ErrorKind::StrContentError)
+                        .map_err(TibrvError::from)
+                        .map(Some)
+                } else {
+                    Ok(None)
+                }
+            })
+            .map(|field_name| BorrowedMsgField {
                 inner: MsgField {
                     name: field_name,
                     inner: field,
                 },
                 phantom: PhantomData,
-            }
-        })
+            })
     }
 
     fn get_field<'a>(
@@ -147,8 +144,7 @@ impl Msg {
             "One of id or name must be provided."
         );
         let mut field: tibrvMsgField = unsafe { mem::zeroed() };
-        let field_name = name
-            .map(|s| CString::new(s).context(ErrorKind::StrContentError))
+        let field_name = name.map(|s| CString::new(s).context(ErrorKind::StrContentError))
             .map_or(Ok(None), |n| n.map(Some))?;
 
         let name_ptr = field_name.as_ref().map_or(std::ptr::null(), |s| s.as_ptr());
@@ -194,13 +190,11 @@ impl Msg {
             id.is_some(),
             "One of id or name must be provided."
         );
-        let field_name = name
-            .map(|s| CString::new(s).context(ErrorKind::StrContentError))
+        let field_name = name.map(|s| CString::new(s).context(ErrorKind::StrContentError))
             .map_or(Ok(None), |n| n.map(Some))?;
 
         let name_ptr = field_name.as_ref().map_or(std::ptr::null(), |m| m.as_ptr());
-        unsafe { tibrvMsg_RemoveFieldEx(self.inner, name_ptr, id.unwrap_or(0) as u16) }
-            .map(|_| ())
+        unsafe { tibrvMsg_RemoveFieldEx(self.inner, name_ptr, id.unwrap_or(0) as u16) }.map(|_| ())
     }
 
     /// Get the number of fields within this message.
@@ -302,7 +296,9 @@ mod tests {
             .encode();
 
         let mut msg = Msg::new().unwrap();
-        msg.add_field(&mut field).and_then(|m| m.add_field(&mut field2)).unwrap();
+        msg.add_field(&mut field)
+            .and_then(|m| m.add_field(&mut field2))
+            .unwrap();
 
         let mut names = vec![];
         for f in &msg {
@@ -327,7 +323,9 @@ mod tests {
 
         let mut msg = Msg::new().unwrap();
         assert!(
-            msg.add_field(&mut field).and_then(|m| m.add_field(&mut field2)).is_ok()
+            msg.add_field(&mut field)
+                .and_then(|m| m.add_field(&mut field2))
+                .is_ok()
         );
 
         assert_eq!(2, msg.num_fields().unwrap());
@@ -337,7 +335,10 @@ mod tests {
             assert!(string_field.is_ok());
             let string_field = string_field.unwrap();
             assert!(string_field.name.is_some());
-            assert_eq!(string_field.name.as_ref().unwrap(), &CString::new("StringField").unwrap());
+            assert_eq!(
+                string_field.name.as_ref().unwrap(),
+                &CString::new("StringField").unwrap()
+            );
         }
 
         {
@@ -345,7 +346,10 @@ mod tests {
             assert!(uint16_field.is_ok());
             let uint16_field = uint16_field.unwrap();
             assert!(uint16_field.name.is_some());
-            assert_eq!(uint16_field.name.as_ref().unwrap(), &CString::new("Uint16 field").unwrap());
+            assert_eq!(
+                uint16_field.name.as_ref().unwrap(),
+                &CString::new("Uint16 field").unwrap()
+            );
         }
 
         assert!(msg.get_field_by_index(2).is_err());
@@ -365,15 +369,23 @@ mod tests {
 
         let mut msg = Msg::new().unwrap();
         assert!(
-            msg.add_field(&mut field).and_then(|m| m.add_field(&mut field2)).is_ok()
+            msg.add_field(&mut field)
+                .and_then(|m| m.add_field(&mut field2))
+                .is_ok()
         );
 
         assert_eq!(2, msg.num_fields().unwrap());
 
-        let names = (&msg).into_iter()
-            .map(|f|
-                f.unwrap().name.as_ref().map(|c| c.to_string_lossy().into_owned()).unwrap()
-            ).collect::<Vec<_>>();
+        let names = (&msg)
+            .into_iter()
+            .map(|f| {
+                f.unwrap()
+                    .name
+                    .as_ref()
+                    .map(|c| c.to_string_lossy().into_owned())
+                    .unwrap()
+            })
+            .collect::<Vec<_>>();
         assert_eq!(names, vec!["StringField", "Uint16 field"]);
     }
 
