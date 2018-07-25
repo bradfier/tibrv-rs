@@ -126,13 +126,13 @@ pub trait Encodable {
 }
 
 /// Trait indicating the type may be decoded from a message field.
-pub trait Decodable {
+pub trait Decodable<'m> {
     /// Try and decode a supplied `MsgField` as this type.
     ///
     /// Rendezvous message fields include some primitive type information,
     /// but this method may fail if the sending party incorrectly encodes
     /// the data fields.
-    fn tibrv_try_decode(msg: &MsgField) -> Result<Self, TibrvError>
+    fn tibrv_try_decode(msg: &'m MsgField) -> Result<Self, TibrvError>
     where
         Self: Sized;
 }
@@ -168,15 +168,15 @@ macro_rules! encodable {
             }
         }
 
-        impl Decodable for $base_type {
-            fn tibrv_try_decode(msg: &MsgField) -> Result<$base_type, TibrvError> {
+        impl<'m> Decodable<'m> for $base_type {
+            fn tibrv_try_decode(msg: &'m MsgField) -> Result<$base_type, TibrvError> {
                 if msg.inner.count > 1 { Err(ErrorKind::NonVectorFieldError)? };
                 if msg.inner.type_ == $tibrv_flag as u8 {
                     let val = unsafe { msg.inner.data.$local };
                     let decoded: $base_type = val.into();
                     Ok(decoded)
                 } else {
-                    Err(ErrorKind::FieldTypeError)?
+                    Err(ErrorKind::FieldTypeError.into())
                 }
             }
         }
@@ -205,8 +205,8 @@ macro_rules! array_encodable {
             }
         }
 
-        impl<'a> Decodable for &'a [$base_type] {
-            fn tibrv_try_decode(msg: &MsgField) -> Result<&'a [$base_type], TibrvError> {
+        impl<'m> Decodable<'m> for &'m [$base_type] {
+            fn tibrv_try_decode(msg: &'m MsgField) -> Result<&'m [$base_type], TibrvError> {
                 if msg.inner.type_ != $tibrv_flag as u8 {
                     Err(ErrorKind::FieldTypeError)?
                 } else {
@@ -215,7 +215,6 @@ macro_rules! array_encodable {
                     Ok(slice)
                 }
             }
-
         }
     )
 }
@@ -239,8 +238,8 @@ impl<'a> Encodable for &'a CStr {
     }
 }
 
-impl<'a> Decodable for &'a CStr {
-    fn tibrv_try_decode(msg: &MsgField) -> Result<&'a CStr, TibrvError> {
+impl<'m> Decodable<'m> for &'m CStr {
+    fn tibrv_try_decode(msg: &'m MsgField) -> Result<&'m CStr, TibrvError> {
         if msg.inner.type_ != TIBRVMSG_STRING as u8 {
             Err(ErrorKind::FieldTypeError)?
         } else {
@@ -271,8 +270,8 @@ impl<'a> Encodable for &'a Msg {
     }
 }
 
-impl Decodable for BorrowedMsg {
-    fn tibrv_try_decode(msg: &MsgField) -> Result<Self, TibrvError> {
+impl<'m> Decodable<'m> for BorrowedMsg {
+    fn tibrv_try_decode(msg: &'m MsgField) -> Result<Self, TibrvError> {
         if msg.inner.type_ != TIBRVMSG_MSG as u8 {
             Err(ErrorKind::FieldTypeError)?
         } else {
