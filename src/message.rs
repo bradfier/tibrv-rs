@@ -352,6 +352,32 @@ mod tests {
     }
 
     #[test]
+    fn field_iter() {
+        let data = CString::new("A string").unwrap();
+        let cstr = data.as_c_str();
+        let mut field = Builder::new(&cstr).with_name("StringField").encode();
+
+        let slice: &[u16] = &[1, 2, 3, 4];
+        let mut field2 = Builder::new(&slice)
+            .with_name("Uint16 field")
+            .with_id(2)
+            .encode();
+
+        let mut msg = Msg::new().unwrap();
+        assert!(
+            msg.add_field(&mut field).and_then(|m| m.add_field(&mut field2)).is_ok()
+        );
+
+        assert_eq!(2, msg.num_fields().unwrap());
+
+        let names = (&msg).into_iter()
+            .map(|f|
+                f.unwrap().name.as_ref().map(|c| c.to_string_lossy().into_owned()).unwrap()
+            ).collect::<Vec<_>>();
+        assert_eq!(names, vec!["StringField", "Uint16 field"]);
+    }
+
+    #[test]
     fn add_remove_fields() {
         let data = CString::new("A string").unwrap();
         let cstr = data.as_c_str();
