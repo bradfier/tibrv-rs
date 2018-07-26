@@ -15,6 +15,71 @@ use std::ops::Deref;
 use std::os::raw::c_void;
 use tibrv_sys::*;
 
+pub enum DecodedField<'m> {
+    String(&'m CStr),
+    Message(BorrowedMsg),
+    U8(u8),
+    U8Array(&'m [u8]),
+    I8(i8),
+    I8Array(&'m [i8]),
+    U16(u16),
+    U16Array(&'m [u16]),
+    I16(i16),
+    I16Array(&'m [i16]),
+    U32(u32),
+    U32Array(&'m [u32]),
+    I32(i32),
+    I32Array(&'m [i32]),
+    U64(u64),
+    U64Array(&'m [u64]),
+    I64(i64),
+    I64Array(&'m [i64]),
+    F32(f32),
+    F32Array(&'m [f32]),
+    F64(f64),
+    F64Array(&'m [f64]),
+    Bool(bool),
+    DateTime(NaiveDateTime),
+    Ipv4(Ipv4Addr),
+    IpPort(u16),
+    Opaque(&'m [u8]),
+}
+
+impl<'m> Decodable<'m> for DecodedField<'m> {
+    fn tibrv_try_decode(msg: &'m MsgField) -> Result<DecodedField<'m>, TibrvError> {
+        match msg.inner.type_ as u32 {
+            TIBRVMSG_STRING => <&'m CStr>::tibrv_try_decode(msg).map(DecodedField::String),
+            TIBRVMSG_MSG => <BorrowedMsg>::tibrv_try_decode(msg).map(DecodedField::Message),
+            TIBRVMSG_U8 => <u8>::tibrv_try_decode(msg).map(DecodedField::U8),
+            TIBRVMSG_U8ARRAY => <&'m [u8]>::tibrv_try_decode(msg).map(DecodedField::U8Array),
+            TIBRVMSG_I8 => <i8>::tibrv_try_decode(msg).map(DecodedField::I8),
+            TIBRVMSG_I8ARRAY => <&'m [i8]>::tibrv_try_decode(msg).map(DecodedField::I8Array),
+            TIBRVMSG_U16 => <u16>::tibrv_try_decode(msg).map(DecodedField::U16),
+            TIBRVMSG_U16ARRAY => <&'m [u16]>::tibrv_try_decode(msg).map(DecodedField::U16Array),
+            TIBRVMSG_I16 => <i16>::tibrv_try_decode(msg).map(DecodedField::I16),
+            TIBRVMSG_I16ARRAY => <&'m [i16]>::tibrv_try_decode(msg).map(DecodedField::I16Array),
+            TIBRVMSG_U32 => <u32>::tibrv_try_decode(msg).map(DecodedField::U32),
+            TIBRVMSG_U32ARRAY => <&'m [u32]>::tibrv_try_decode(msg).map(DecodedField::U32Array),
+            TIBRVMSG_I32 => <i32>::tibrv_try_decode(msg).map(DecodedField::I32),
+            TIBRVMSG_I32ARRAY => <&'m [i32]>::tibrv_try_decode(msg).map(DecodedField::I32Array),
+            TIBRVMSG_U64 => <u64>::tibrv_try_decode(msg).map(DecodedField::U64),
+            TIBRVMSG_U64ARRAY => <&'m [u64]>::tibrv_try_decode(msg).map(DecodedField::U64Array),
+            TIBRVMSG_I64 => <i64>::tibrv_try_decode(msg).map(DecodedField::I64),
+            TIBRVMSG_I64ARRAY => <&'m [i64]>::tibrv_try_decode(msg).map(DecodedField::I64Array),
+            TIBRVMSG_F32 => <f32>::tibrv_try_decode(msg).map(DecodedField::F32),
+            TIBRVMSG_F32ARRAY => <&'m [f32]>::tibrv_try_decode(msg).map(DecodedField::F32Array),
+            TIBRVMSG_F64 => <f64>::tibrv_try_decode(msg).map(DecodedField::F64),
+            TIBRVMSG_F64ARRAY => <&'m [f64]>::tibrv_try_decode(msg).map(DecodedField::F64Array),
+            TIBRVMSG_BOOL => <bool>::tibrv_try_decode(msg).map(DecodedField::Bool),
+            TIBRVMSG_DATETIME => <NaiveDateTime>::tibrv_try_decode(msg).map(DecodedField::DateTime),
+            TIBRVMSG_IPADDR32 => <Ipv4Addr>::tibrv_try_decode(msg).map(DecodedField::Ipv4),
+            TIBRVMSG_IPPORT16 => tibrv_try_decode_port(msg).map(DecodedField::IpPort),
+            TIBRVMSG_OPAQUE => unsafe { tibrv_try_decode_opaque::<u8>(msg).map(DecodedField::Opaque) },
+            _ => Err(ErrorKind::FieldTypeError.into()), // FIXME: should be more specific error type
+        }
+    }
+}
+
 /// A structure wrapping a `tibrvMsgField`
 pub struct MsgField {
     pub name: Option<CString>,
@@ -399,6 +464,125 @@ pub unsafe fn tibrv_try_decode_opaque<T: Copy>(msg: &MsgField) -> Result<&[T], T
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    macro_rules! test_encodable_array {
+        ($rt:ty, $df:tt, $bs:expr, $val1:expr, $val2:expr, $val3:expr, $val4:expr) => (
+            {
+                let array: &[$rt] = &[$val1, $val2, $val3, $val4];
+                let fld = array.tibrv_encode(Some("Array"), None);
+                assert_eq!($bs, fld.inner.size);
+                assert_eq!(4, fld.inner.count);
+
+                match <DecodedField>::tibrv_try_decode(&fld).unwrap() {
+                    DecodedField::$df(slice) => {
+                        assert_eq!($val1, slice[0]);
+                        assert_eq!($val2, slice[1]);
+                        assert_eq!($val3, slice[2]);
+                        assert_eq!($val4, slice[3]);
+                    },
+                    _ => panic!("Field did not decode as expected"),
+                }
+            }
+        )
+    }
+
+    #[test]
+    fn decode_field_arrays() {
+        test_encodable_array!(u8, U8Array, 1, 1u8, 2u8, 3u8, 4u8);
+        test_encodable_array!(i8, I8Array, 1, -5i8, -6i8, -7i8, -8i8);
+        test_encodable_array!(u16, U16Array, 2, 1u16, 2u16, 3u16, 4u16);
+        test_encodable_array!(i16, I16Array, 2, -5i16, -6i16, -7i16, -8i16);
+        test_encodable_array!(u32, U32Array, 4, 1u32, 2u32, 3u32, 4u32);
+        test_encodable_array!(i32, I32Array, 4, -5i32, -6i32, -7i32, -8i32);
+        test_encodable_array!(u64, U64Array, 8, 1u64, 2u64, 3u64, 4u64);
+        test_encodable_array!(i64, I64Array, 8, -5i64, -6i64, -7i64, -8i64);
+        // Floating point
+        test_encodable_array!(f32, F32Array, 4, 1f32, -2f32, 3f32, -4f32);
+        test_encodable_array!(f64, F64Array, 8, 1f64, -2f64, 3f64, -4f64);
+    }
+
+    macro_rules! test_encodable {
+        ($df:tt, $val:expr) => (
+            {
+                let val = $val;
+                let fld = val.tibrv_encode(None, None);
+                match <DecodedField>::tibrv_try_decode(&fld).unwrap() {
+                    DecodedField::$df(v) => assert_eq!(val, v),
+                    _ => panic!("Field did not decode as expected"),
+                }
+            }
+        )
+    }
+
+    #[test]
+    fn decode_fields() {
+        use chrono::NaiveDate;
+        test_encodable!(U8, std::u8::MAX);
+        test_encodable!(I8, std::i8::MAX);
+        test_encodable!(U16, std::u16::MAX);
+        test_encodable!(I16, std::i16::MAX);
+        test_encodable!(U32, std::u32::MAX);
+        test_encodable!(I32, std::i32::MAX);
+        test_encodable!(U64, std::u64::MAX);
+        test_encodable!(I64, std::i64::MAX);
+        // Floating point
+        test_encodable!(F32, std::f32::MAX);
+        test_encodable!(F64, std::f64::MAX);
+        // Custom types
+        test_encodable!(Bool, true);
+        test_encodable!(DateTime, NaiveDate::from_ymd(2018, 7, 24).and_hms(1, 2, 3));
+        test_encodable!(Ipv4, Ipv4Addr::new(127, 0, 0, 1));
+        {
+            let addr = Ipv4Addr::new(127, 0, 0, 1);
+            let fld = addr.tibrv_encode(Some("IP Address"), None);
+            match <DecodedField>::tibrv_try_decode(&fld).unwrap() {
+                DecodedField::Ipv4(v) => assert_eq!(addr, v),
+                _ => panic!("Field did not decode as expected"),
+            }
+        }
+        {
+            let port = 1;
+            let fld = tibrv_encode_port(port, Some("Port"), None);
+            match <DecodedField>::tibrv_try_decode(&fld).unwrap() {
+                DecodedField::IpPort(v) => assert_eq!(port, v),
+                _ => panic!("Field did not decode as expected"),
+            }
+        }
+        {
+            let cs = CString::new("teststring").unwrap();
+            let cstr = cs.as_c_str();
+            let fld = cstr.tibrv_encode(None, None);
+            match <DecodedField>::tibrv_try_decode(&fld).unwrap() {
+                DecodedField::String(v) => assert_eq!(cstr, v),
+                _ => panic!("Field did not decode as expected"),
+            }
+        }
+        {
+            let mut msg = Msg::new().unwrap();
+            let data = CString::new("Hello world!").unwrap();
+            let mut field = Builder::new(&data.as_c_str()).with_name("string").encode();
+            let _ = msg.add_field(&mut field).unwrap();
+            let fld = (&msg).tibrv_encode(None, None);
+            match <DecodedField>::tibrv_try_decode(&fld).unwrap() {
+                DecodedField::Message(v) => {
+                    let m = v.to_owned().unwrap();
+                    let d = m.get_field_by_index(0).unwrap();
+                    let c = <&CStr>::tibrv_try_decode(&d).unwrap();
+                    assert_eq!(data.as_c_str(), c);
+                },
+                _ => panic!("Field did not decode as expected"),
+            }
+        }
+        {
+            let slice = &[1u8,2,3,4];
+            let fld = unsafe { tibrv_encode_opaque::<u8>(slice, None, None) };
+            match <DecodedField>::tibrv_try_decode(&fld).unwrap() {
+                DecodedField::Opaque(b) => assert_eq!(slice, b),
+                _ => panic!("Field did not decode as expected"),
+            }
+        }
+    }
 
     #[test]
     fn fixed_width_encode_size() {
