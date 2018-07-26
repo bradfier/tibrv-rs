@@ -46,35 +46,35 @@ pub enum DecodedField<'m> {
 }
 
 impl<'m> Decodable<'m> for DecodedField<'m> {
-    fn tibrv_try_decode(msg: &'m MsgField) -> Result<DecodedField<'m>, TibrvError> {
-        match msg.inner.type_ as u32 {
-            TIBRVMSG_STRING => <&'m CStr>::tibrv_try_decode(msg).map(DecodedField::String),
-            TIBRVMSG_MSG => <BorrowedMsg>::tibrv_try_decode(msg).map(DecodedField::Message),
-            TIBRVMSG_U8 => <u8>::tibrv_try_decode(msg).map(DecodedField::U8),
-            TIBRVMSG_U8ARRAY => <&'m [u8]>::tibrv_try_decode(msg).map(DecodedField::U8Array),
-            TIBRVMSG_I8 => <i8>::tibrv_try_decode(msg).map(DecodedField::I8),
-            TIBRVMSG_I8ARRAY => <&'m [i8]>::tibrv_try_decode(msg).map(DecodedField::I8Array),
-            TIBRVMSG_U16 => <u16>::tibrv_try_decode(msg).map(DecodedField::U16),
-            TIBRVMSG_U16ARRAY => <&'m [u16]>::tibrv_try_decode(msg).map(DecodedField::U16Array),
-            TIBRVMSG_I16 => <i16>::tibrv_try_decode(msg).map(DecodedField::I16),
-            TIBRVMSG_I16ARRAY => <&'m [i16]>::tibrv_try_decode(msg).map(DecodedField::I16Array),
-            TIBRVMSG_U32 => <u32>::tibrv_try_decode(msg).map(DecodedField::U32),
-            TIBRVMSG_U32ARRAY => <&'m [u32]>::tibrv_try_decode(msg).map(DecodedField::U32Array),
-            TIBRVMSG_I32 => <i32>::tibrv_try_decode(msg).map(DecodedField::I32),
-            TIBRVMSG_I32ARRAY => <&'m [i32]>::tibrv_try_decode(msg).map(DecodedField::I32Array),
-            TIBRVMSG_U64 => <u64>::tibrv_try_decode(msg).map(DecodedField::U64),
-            TIBRVMSG_U64ARRAY => <&'m [u64]>::tibrv_try_decode(msg).map(DecodedField::U64Array),
-            TIBRVMSG_I64 => <i64>::tibrv_try_decode(msg).map(DecodedField::I64),
-            TIBRVMSG_I64ARRAY => <&'m [i64]>::tibrv_try_decode(msg).map(DecodedField::I64Array),
-            TIBRVMSG_F32 => <f32>::tibrv_try_decode(msg).map(DecodedField::F32),
-            TIBRVMSG_F32ARRAY => <&'m [f32]>::tibrv_try_decode(msg).map(DecodedField::F32Array),
-            TIBRVMSG_F64 => <f64>::tibrv_try_decode(msg).map(DecodedField::F64),
-            TIBRVMSG_F64ARRAY => <&'m [f64]>::tibrv_try_decode(msg).map(DecodedField::F64Array),
-            TIBRVMSG_BOOL => <bool>::tibrv_try_decode(msg).map(DecodedField::Bool),
-            TIBRVMSG_DATETIME => <NaiveDateTime>::tibrv_try_decode(msg).map(DecodedField::DateTime),
-            TIBRVMSG_IPADDR32 => <Ipv4Addr>::tibrv_try_decode(msg).map(DecodedField::Ipv4),
-            TIBRVMSG_IPPORT16 => tibrv_try_decode_port(msg).map(DecodedField::IpPort),
-            TIBRVMSG_OPAQUE => unsafe { tibrv_try_decode_opaque::<u8>(msg).map(DecodedField::Opaque) },
+    fn tibrv_try_decode(fld: &'m MsgField) -> Result<DecodedField<'m>, TibrvError> {
+        match fld.inner.type_ as u32 {
+            TIBRVMSG_STRING => fld.try_decode().map(DecodedField::String),
+            TIBRVMSG_MSG => fld.try_decode().map(DecodedField::Message),
+            TIBRVMSG_U8 => fld.try_decode().map(DecodedField::U8),
+            TIBRVMSG_U8ARRAY => fld.try_decode().map(DecodedField::U8Array),
+            TIBRVMSG_I8 => fld.try_decode().map(DecodedField::I8),
+            TIBRVMSG_I8ARRAY => fld.try_decode().map(DecodedField::I8Array),
+            TIBRVMSG_U16 => fld.try_decode().map(DecodedField::U16),
+            TIBRVMSG_U16ARRAY => fld.try_decode().map(DecodedField::U16Array),
+            TIBRVMSG_I16 => fld.try_decode().map(DecodedField::I16),
+            TIBRVMSG_I16ARRAY => fld.try_decode().map(DecodedField::I16Array),
+            TIBRVMSG_U32 => fld.try_decode().map(DecodedField::U32),
+            TIBRVMSG_U32ARRAY => fld.try_decode().map(DecodedField::U32Array),
+            TIBRVMSG_I32 => fld.try_decode().map(DecodedField::I32),
+            TIBRVMSG_I32ARRAY => fld.try_decode().map(DecodedField::I32Array),
+            TIBRVMSG_U64 => fld.try_decode().map(DecodedField::U64),
+            TIBRVMSG_U64ARRAY => fld.try_decode().map(DecodedField::U64Array),
+            TIBRVMSG_I64 => fld.try_decode().map(DecodedField::I64),
+            TIBRVMSG_I64ARRAY => fld.try_decode().map(DecodedField::I64Array),
+            TIBRVMSG_F32 => fld.try_decode().map(DecodedField::F32),
+            TIBRVMSG_F32ARRAY => fld.try_decode().map(DecodedField::F32Array),
+            TIBRVMSG_F64 => fld.try_decode().map(DecodedField::F64),
+            TIBRVMSG_F64ARRAY => fld.try_decode().map(DecodedField::F64Array),
+            TIBRVMSG_BOOL => fld.try_decode().map(DecodedField::Bool),
+            TIBRVMSG_DATETIME => fld.try_decode().map(DecodedField::DateTime),
+            TIBRVMSG_IPADDR32 => fld.try_decode().map(DecodedField::Ipv4),
+            TIBRVMSG_IPPORT16 => tibrv_try_decode_port(fld).map(DecodedField::IpPort),
+            TIBRVMSG_OPAQUE => unsafe { tibrv_try_decode_opaque::<u8>(fld).map(DecodedField::Opaque) },
             _ => Err(ErrorKind::FieldTypeError.into()), // FIXME: should be more specific error type
         }
     }
@@ -84,6 +84,12 @@ impl<'m> Decodable<'m> for DecodedField<'m> {
 pub struct MsgField {
     pub name: Option<CString>,
     pub inner: tibrvMsgField,
+}
+
+impl MsgField {
+    pub fn try_decode<'m, T: Decodable<'m>>(&'m self) -> Result<T, TibrvError> {
+        <T>::tibrv_try_decode(self)
+    }
 }
 
 /// A structure wrapping a `MsgField`
@@ -474,7 +480,7 @@ mod tests {
                 assert_eq!($bs, fld.inner.size);
                 assert_eq!(4, fld.inner.count);
 
-                match <DecodedField>::tibrv_try_decode(&fld).unwrap() {
+                match fld.try_decode().unwrap() {
                     DecodedField::$df(slice) => {
                         assert_eq!($val1, slice[0]);
                         assert_eq!($val2, slice[1]);
@@ -507,7 +513,7 @@ mod tests {
             {
                 let val = $val;
                 let fld = val.tibrv_encode(None, None);
-                match <DecodedField>::tibrv_try_decode(&fld).unwrap() {
+                match fld.try_decode().unwrap() {
                     DecodedField::$df(v) => assert_eq!(val, v),
                     _ => panic!("Field did not decode as expected"),
                 }
