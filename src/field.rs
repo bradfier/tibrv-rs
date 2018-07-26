@@ -366,7 +366,7 @@ pub unsafe fn tibrv_encode_opaque<'a, T: Copy>(
         name: name_cstr,
         inner: tibrvMsgField {
             name: ptr,
-            size: std::mem::size_of_val(&slice) as tibrv_u32,
+            size: std::mem::size_of_val(slice) as tibrv_u32,
             count: 1 as tibrv_u32,
             data: tibrvLocalData {
                 buf: slice.as_ptr() as *const c_void,
