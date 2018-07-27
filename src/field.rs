@@ -15,38 +15,38 @@ use std::ops::Deref;
 use std::os::raw::c_void;
 use tibrv_sys::*;
 
-pub enum DecodedField<'m> {
-    String(&'m CStr),
+pub enum DecodedField<'a> {
+    String(&'a CStr),
     Message(BorrowedMsg),
     U8(u8),
-    U8Array(&'m [u8]),
+    U8Array(&'a [u8]),
     I8(i8),
-    I8Array(&'m [i8]),
+    I8Array(&'a [i8]),
     U16(u16),
-    U16Array(&'m [u16]),
+    U16Array(&'a [u16]),
     I16(i16),
-    I16Array(&'m [i16]),
+    I16Array(&'a [i16]),
     U32(u32),
-    U32Array(&'m [u32]),
+    U32Array(&'a [u32]),
     I32(i32),
-    I32Array(&'m [i32]),
+    I32Array(&'a [i32]),
     U64(u64),
-    U64Array(&'m [u64]),
+    U64Array(&'a [u64]),
     I64(i64),
-    I64Array(&'m [i64]),
+    I64Array(&'a [i64]),
     F32(f32),
-    F32Array(&'m [f32]),
+    F32Array(&'a [f32]),
     F64(f64),
-    F64Array(&'m [f64]),
+    F64Array(&'a [f64]),
     Bool(bool),
     DateTime(NaiveDateTime),
     Ipv4(Ipv4Addr),
     IpPort(u16),
-    Opaque(&'m [u8]),
+    Opaque(&'a [u8]),
 }
 
-impl<'m> Decodable<'m> for DecodedField<'m> {
-    fn tibrv_try_decode(fld: &'m MsgField) -> Result<DecodedField<'m>, TibrvError> {
+impl<'a> Decodable<'a> for DecodedField<'a> {
+    fn tibrv_try_decode(fld: &'a MsgField) -> Result<DecodedField<'a>, TibrvError> {
         match fld.inner.type_ as u32 {
             TIBRVMSG_STRING => fld.try_decode().map(DecodedField::String),
             TIBRVMSG_MSG => fld.try_decode().map(DecodedField::Message),
@@ -87,7 +87,7 @@ pub struct MsgField {
 }
 
 impl MsgField {
-    pub fn try_decode<'m, T: Decodable<'m>>(&'m self) -> Result<T, TibrvError> {
+    pub fn try_decode<'a, T: Decodable<'a>>(&'a self) -> Result<T, TibrvError> {
         <T>::tibrv_try_decode(self)
     }
 }
@@ -197,13 +197,13 @@ pub trait Encodable {
 }
 
 /// Trait indicating the type may be decoded from a message field.
-pub trait Decodable<'m> {
+pub trait Decodable<'a> {
     /// Try and decode a supplied `MsgField` as this type.
     ///
     /// Rendezvous message fields include some primitive type information,
     /// but this method may fail if the sending party incorrectly encodes
     /// the data fields.
-    fn tibrv_try_decode(msg: &'m MsgField) -> Result<Self, TibrvError>
+    fn tibrv_try_decode(msg: &'a MsgField) -> Result<Self, TibrvError>
     where
         Self: Sized;
 }
@@ -239,8 +239,8 @@ macro_rules! encodable {
             }
         }
 
-        impl<'m> Decodable<'m> for $base_type {
-            fn tibrv_try_decode(msg: &'m MsgField) -> Result<$base_type, TibrvError> {
+        impl<'a> Decodable<'a> for $base_type {
+            fn tibrv_try_decode(msg: &'a MsgField) -> Result<$base_type, TibrvError> {
                 if msg.inner.count > 1 { Err(ErrorKind::NonVectorFieldError)? };
                 if msg.inner.type_ == $tibrv_flag as u8 {
                     let val = unsafe { msg.inner.data.$local };
@@ -276,8 +276,8 @@ macro_rules! array_encodable {
             }
         }
 
-        impl<'m> Decodable<'m> for &'m [$base_type] {
-            fn tibrv_try_decode(msg: &'m MsgField) -> Result<&'m [$base_type], TibrvError> {
+        impl<'a> Decodable<'a> for &'a [$base_type] {
+            fn tibrv_try_decode(msg: &'a MsgField) -> Result<&'a [$base_type], TibrvError> {
                 if msg.inner.type_ != $tibrv_flag as u8 {
                     Err(ErrorKind::FieldTypeError)?
                 } else {
@@ -309,8 +309,8 @@ impl<'a> Encodable for &'a CStr {
     }
 }
 
-impl<'m> Decodable<'m> for &'m CStr {
-    fn tibrv_try_decode(msg: &'m MsgField) -> Result<&'m CStr, TibrvError> {
+impl<'a> Decodable<'a> for &'a CStr {
+    fn tibrv_try_decode(msg: &'a MsgField) -> Result<&'a CStr, TibrvError> {
         if msg.inner.type_ != TIBRVMSG_STRING as u8 {
             Err(ErrorKind::FieldTypeError)?
         } else {
@@ -341,8 +341,8 @@ impl<'a> Encodable for &'a Msg {
     }
 }
 
-impl<'m> Decodable<'m> for BorrowedMsg {
-    fn tibrv_try_decode(msg: &'m MsgField) -> Result<Self, TibrvError> {
+impl<'a> Decodable<'a> for BorrowedMsg {
+    fn tibrv_try_decode(msg: &'a MsgField) -> Result<Self, TibrvError> {
         if msg.inner.type_ != TIBRVMSG_MSG as u8 {
             Err(ErrorKind::FieldTypeError)?
         } else {

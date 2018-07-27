@@ -9,13 +9,13 @@ use std::marker::PhantomData;
 use std::mem;
 use tibrv_sys::*;
 
-pub struct MsgIter<'m> {
-    msg: &'m Msg,
+pub struct MsgIter<'a> {
+    msg: &'a Msg,
     index: u32,
 }
 
-impl<'m> Iterator for MsgIter<'m> {
-    type Item = Result<BorrowedMsgField<'m>, TibrvError>;
+impl<'a> Iterator for MsgIter<'a> {
+    type Item = Result<BorrowedMsgField<'a>, TibrvError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let num_fields = match self.msg.num_fields() {
@@ -32,8 +32,8 @@ impl<'m> Iterator for MsgIter<'m> {
     }
 }
 
-impl<'m> IntoIterator for &'m Msg {
-    type IntoIter = MsgIter<'m>;
+impl<'a> IntoIterator for &'a Msg {
+    type IntoIter = MsgIter<'a>;
     type Item = <Self::IntoIter as Iterator>::Item;
 
     fn into_iter(self) -> Self::IntoIter {
