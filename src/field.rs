@@ -482,6 +482,7 @@ mod tests {
 
                 match fld.try_decode().unwrap() {
                     DecodedField::$df(slice) => {
+                        assert_eq!(4, slice.len());
                         assert_eq!($val1, slice[0]);
                         assert_eq!($val2, slice[1]);
                         assert_eq!($val3, slice[2]);
