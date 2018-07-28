@@ -189,7 +189,7 @@ impl Future for AsyncReq {
     fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
         match self.sub.poll().unwrap() {
             Async::Ready(Some(v)) => Ok(Async::Ready(v)),
-            Async::Ready(None) => unimplemented!(), // Fix after adding async errors to TibrvError!
+            Async::Ready(None) => Err(ErrorKind::QueueError.into()),
             Async::NotReady => Ok(Async::NotReady),
         }
     }
