@@ -5,8 +5,8 @@ rust:
     - nightly
 
 install:
-    - curl -O $TIBCO_SOURCE
-    - tar -xf tibco.tar.gz
+    - curl -O $DEPS
+    - tar -xf e19133966fd3bc734c5c033ebecef340.tar.gz
 
 before_script:
     - |
