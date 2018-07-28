@@ -51,7 +51,10 @@ impl AsyncQueue {
         })
     }
 
-    unsafe extern "C" fn callback(_queue: tibrvQueue, closure: *mut ::std::os::raw::c_void) -> () {
+    unsafe extern "C" fn callback(
+        _queue: tibrvQueue,
+        closure: *mut ::std::os::raw::c_void,
+    ) -> () {
         // As with the sync version, we can't panic and unwind into the
         // caller, so we catch any recoverable panic and ignore it.
         let _ = ::std::panic::catch_unwind(move || {
@@ -92,8 +95,7 @@ impl AsyncQueue {
 
         // This shouldn't ever fail, if it does, something panic-worthy has
         // gone wrong.
-        let mut listeners = self
-            .listeners
+        let mut listeners = self.listeners
             .lock()
             .expect("Couldn't lock async channel notifier list!");
 
@@ -145,7 +147,10 @@ impl AsyncSub {
                 if e == mpsc::TryRecvError::Empty {
                     self.io.clear_read_ready(ready)?;
 
-                    return Err(io::Error::new(io::ErrorKind::WouldBlock, "no messages"));
+                    return Err(io::Error::new(
+                        io::ErrorKind::WouldBlock,
+                        "no messages",
+                    ));
                 }
                 // Only other error from a Receiver is a broken stream
                 Err(io::Error::new(io::ErrorKind::BrokenPipe, "channel closed"))

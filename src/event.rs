@@ -18,7 +18,8 @@ unsafe extern "C" fn sync_callback(
     // way to indicate that to Rendezvous without causing an abort.
     // Instead we catch any recoverable unwind.
     let _ = ::std::panic::catch_unwind(move || {
-        let sender: Box<mpsc::Sender<Msg>> = Box::from_raw(closure as *mut mpsc::Sender<Msg>);
+        let sender: Box<mpsc::Sender<Msg>> =
+            Box::from_raw(closure as *mut mpsc::Sender<Msg>);
         let msg = BorrowedMsg { inner: message };
         sender.send(msg.detach().unwrap()).unwrap();
         ::std::mem::forget(sender); // Don't run Drop on the channel
@@ -64,7 +65,11 @@ impl Queue {
     ///
     /// Subject must be valid ASCII, wildcards are accepted, although
     /// a wildcard-only subject is not.
-    pub(crate) fn subscribe(self, tp: &Transport, subject: &str) -> Result<Subscription, TibrvError> {
+    pub(crate) fn subscribe(
+        self,
+        tp: &Transport,
+        subject: &str,
+    ) -> Result<Subscription, TibrvError> {
         let (send, recv) = mpsc::channel();
         let subject_c = CString::new(subject).context(ErrorKind::StrContentError)?;
 

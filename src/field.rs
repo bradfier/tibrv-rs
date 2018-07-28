@@ -74,7 +74,9 @@ impl<'a> Decodable<'a> for DecodedField<'a> {
             TIBRVMSG_DATETIME => fld.try_decode().map(DecodedField::DateTime),
             TIBRVMSG_IPADDR32 => fld.try_decode().map(DecodedField::Ipv4),
             TIBRVMSG_IPPORT16 => tibrv_try_decode_port(fld).map(DecodedField::IpPort),
-            TIBRVMSG_OPAQUE => unsafe { tibrv_try_decode_opaque::<u8>(fld).map(DecodedField::Opaque) },
+            TIBRVMSG_OPAQUE => unsafe {
+                tibrv_try_decode_opaque::<u8>(fld).map(DecodedField::Opaque)
+            },
             _ => Err(ErrorKind::FieldTypeError.into()), // FIXME: should be more specific error type
         }
     }
@@ -453,7 +455,9 @@ pub unsafe fn tibrv_encode_opaque<'a, T: Copy>(
 /// is lost (internally the slice is passed as `void*`).
 /// Therefore this function is approximately as unsafe as `std::mem::transmute`,
 /// except without the soft and fluffy blanket of size checking.
-pub unsafe fn tibrv_try_decode_opaque<T: Copy>(msg: &MsgField) -> Result<&[T], TibrvError> {
+pub unsafe fn tibrv_try_decode_opaque<T: Copy>(
+    msg: &MsgField,
+) -> Result<&[T], TibrvError> {
     if msg.inner.type_ != TIBRVMSG_OPAQUE as u8 {
         Err(ErrorKind::FieldTypeError)?
     } else {
@@ -510,16 +514,14 @@ mod tests {
     }
 
     macro_rules! test_encodable {
-        ($df:tt, $val:expr) => (
-            {
-                let val = $val;
-                let fld = val.tibrv_encode(None, None);
-                match fld.try_decode().unwrap() {
-                    DecodedField::$df(v) => assert_eq!(val, v),
-                    _ => panic!("Field did not decode as expected"),
-                }
+        ($df:tt, $val:expr) => {{
+            let val = $val;
+            let fld = val.tibrv_encode(None, None);
+            match fld.try_decode().unwrap() {
+                DecodedField::$df(v) => assert_eq!(val, v),
+                _ => panic!("Field did not decode as expected"),
             }
-        )
+        }};
     }
 
     #[test]
@@ -577,12 +579,12 @@ mod tests {
                     let d = m.get_field_by_index(0).unwrap();
                     let c = <&CStr>::tibrv_try_decode(&d).unwrap();
                     assert_eq!(data.as_c_str(), c);
-                },
+                }
                 _ => panic!("Field did not decode as expected"),
             }
         }
         {
-            let slice = &[1u8,2,3,4];
+            let slice = &[1u8, 2, 3, 4];
             let fld = unsafe { tibrv_encode_opaque::<u8>(slice, None, None) };
             match <DecodedField>::tibrv_try_decode(&fld).unwrap() {
                 DecodedField::Opaque(b) => assert_eq!(slice, b),

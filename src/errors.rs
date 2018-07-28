@@ -5,7 +5,10 @@ use std::fmt;
 use tibrv_sys::tibrv_status;
 
 pub(crate) trait TibrvResult {
-    fn and_then<U, F: FnOnce(Self) -> Result<U, TibrvError>>(self, f: F) -> Result<U, TibrvError>
+    fn and_then<U, F: FnOnce(Self) -> Result<U, TibrvError>>(
+        self,
+        f: F,
+    ) -> Result<U, TibrvError>
     where
         Self: Sized;
     fn map<U, F: FnOnce(Self) -> U>(self, f: F) -> Result<U, TibrvError>
@@ -113,7 +116,10 @@ impl From<tibrv_status> for ErrorKind {
 ///
 /// Executes supplied closure if the `tibrv_status` is not `TIBRV_OK`.
 impl TibrvResult for tibrv_status {
-    fn and_then<U, F: FnOnce(Self) -> Result<U, TibrvError>>(self, f: F) -> Result<U, TibrvError> {
+    fn and_then<U, F: FnOnce(Self) -> Result<U, TibrvError>>(
+        self,
+        f: F,
+    ) -> Result<U, TibrvError> {
         match self {
             tibrv_status::TIBRV_OK => f(self),
             _ => Err(ErrorKind::from(self).into()),

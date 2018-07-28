@@ -211,7 +211,11 @@ impl Transport {
     ///
     /// Sets up the queue and channels as in a synchronous subscription, and
     /// returns an `AsyncSub` stream.
-    pub fn async_sub(&self, handle: &Handle, subject: &str) -> Result<AsyncSub, TibrvError> {
+    pub fn async_sub(
+        &self,
+        handle: &Handle,
+        subject: &str,
+    ) -> Result<AsyncSub, TibrvError> {
         AsyncQueue::new(self.context.clone())?.subscribe(handle, &self, subject)
     }
 }
@@ -231,11 +235,15 @@ impl Sink for Transport {
     // From the documentation it looks like tibrvTransport_Send
     // isn't supposed to block, so we have to just assume it's
     // doing internal buffering.
-    fn start_send(&mut self, mut item: Msg) -> StartSend<Self::SinkItem, Self::SinkError> {
+    fn start_send(
+        &mut self,
+        mut item: Msg,
+    ) -> StartSend<Self::SinkItem, Self::SinkError> {
         // Here we do the send immediately, then always return
         // complete when poll_complete is called later.
-        Transport::send(self, &mut item)
-            .map_err(|_| io::Error::new(io::ErrorKind::Other, "Unable to send on transport"))?;
+        Transport::send(self, &mut item).map_err(|_| {
+            io::Error::new(io::ErrorKind::Other, "Unable to send on transport")
+        })?;
         Ok(AsyncSink::Ready)
     }
 

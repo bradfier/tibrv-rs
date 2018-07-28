@@ -87,7 +87,10 @@ impl Msg {
     /// is guaranteed to live at least as long as the parent `Msg`.
     ///
     /// This variant retrieves the field by name.
-    pub fn get_field_by_name<'a>(&'a self, name: &str) -> Result<BorrowedMsgField<'a>, TibrvError> {
+    pub fn get_field_by_name<'a>(
+        &'a self,
+        name: &str,
+    ) -> Result<BorrowedMsgField<'a>, TibrvError> {
         self.get_field(Some(name), None)
     }
 
@@ -107,7 +110,10 @@ impl Msg {
     /// is guaranteed to live at least as long as the parent `Msg`.
     ///
     /// This variant retrieves the field by index.
-    pub fn get_field_by_index(&self, index: u32) -> Result<BorrowedMsgField, TibrvError> {
+    pub fn get_field_by_index(
+        &self,
+        index: u32,
+    ) -> Result<BorrowedMsgField, TibrvError> {
         let mut field: tibrvMsgField = unsafe { mem::zeroed() };
 
         unsafe { tibrvMsg_GetFieldByIndex(self.inner, &mut field, index as tibrv_u32) }
@@ -144,8 +150,9 @@ impl Msg {
             "One of id or name must be provided."
         );
         let mut field: tibrvMsgField = unsafe { mem::zeroed() };
-        let field_name = name.map(|s| CString::new(s).context(ErrorKind::StrContentError))
-            .map_or(Ok(None), |n| n.map(Some))?;
+        let field_name = name.map(|s| {
+            CString::new(s).context(ErrorKind::StrContentError)
+        }).map_or(Ok(None), |n| n.map(Some))?;
 
         let name_ptr = field_name.as_ref().map_or(std::ptr::null(), |s| s.as_ptr());
         unsafe {
@@ -184,17 +191,23 @@ impl Msg {
         self.remove_field(None, Some(id))
     }
 
-    fn remove_field(&self, name: Option<&str>, id: Option<u32>) -> Result<(), TibrvError> {
+    fn remove_field(
+        &self,
+        name: Option<&str>,
+        id: Option<u32>,
+    ) -> Result<(), TibrvError> {
         assert_ne!(
             name.is_some(),
             id.is_some(),
             "One of id or name must be provided."
         );
-        let field_name = name.map(|s| CString::new(s).context(ErrorKind::StrContentError))
-            .map_or(Ok(None), |n| n.map(Some))?;
+        let field_name = name.map(|s| {
+            CString::new(s).context(ErrorKind::StrContentError)
+        }).map_or(Ok(None), |n| n.map(Some))?;
 
         let name_ptr = field_name.as_ref().map_or(std::ptr::null(), |m| m.as_ptr());
-        unsafe { tibrvMsg_RemoveFieldEx(self.inner, name_ptr, id.unwrap_or(0) as u16) }.map(|_| ())
+        unsafe { tibrvMsg_RemoveFieldEx(self.inner, name_ptr, id.unwrap_or(0) as u16) }
+            .map(|_| ())
     }
 
     /// Get the number of fields within this message.
