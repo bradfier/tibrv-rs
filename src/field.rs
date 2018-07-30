@@ -77,7 +77,7 @@ impl<'a> Decodable<'a> for DecodedField<'a> {
             TIBRVMSG_OPAQUE => unsafe {
                 tibrv_try_decode_opaque::<u8>(fld).map(DecodedField::Opaque)
             },
-            _ => Err(ErrorKind::FieldTypeError.into()), // FIXME: should be more specific error type
+            _ => Err(ErrorKind::UnknownFieldTypeError(fld.inner.type_).into()),
         }
     }
 }

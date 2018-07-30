@@ -2,7 +2,7 @@
 
 use failure::*;
 use std::fmt;
-use tibrv_sys::tibrv_status;
+use tibrv_sys::{tibrv_status, tibrv_u8};
 
 pub(crate) trait TibrvResult {
     fn and_then<U, F: FnOnce(Self) -> Result<U, TibrvError>>(
@@ -53,6 +53,10 @@ pub enum ErrorKind {
     /// match the internal tag.
     #[fail(display = "Tried to decode a field into an incorrect type")]
     FieldTypeError,
+    /// There was an attempt to decode a MsgField with an unsupported TIBRVMSG_*
+    /// value
+    #[fail(display = "Tried to decode a field with unknown/unsupported tag value {}", _0)]
+    UnknownFieldTypeError(tibrv_u8),
     /// Some other Rendezvous error occurred.
     #[fail(display = "Unknown Error: {}", _0)]
     UnknownError(tibrv_status),
