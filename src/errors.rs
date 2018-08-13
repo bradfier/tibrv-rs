@@ -55,7 +55,9 @@ pub enum ErrorKind {
     FieldTypeError,
     /// There was an attempt to decode a MsgField with an unsupported TIBRVMSG_*
     /// value
-    #[fail(display = "Tried to decode a field with unknown/unsupported tag value {}", _0)]
+    #[fail(
+        display = "Tried to decode a field with unknown/unsupported tag value {}", _0
+    )]
     UnknownFieldTypeError(tibrv_u8),
     /// Some other Rendezvous error occurred.
     #[fail(display = "Unknown Error: {}", _0)]

@@ -95,7 +95,8 @@ impl AsyncQueue {
 
         // This shouldn't ever fail, if it does, something panic-worthy has
         // gone wrong.
-        let mut listeners = self.listeners
+        let mut listeners = self
+            .listeners
             .lock()
             .expect("Couldn't lock async channel notifier list!");
 

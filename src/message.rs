@@ -150,9 +150,9 @@ impl Msg {
             "One of id or name must be provided."
         );
         let mut field: tibrvMsgField = unsafe { mem::zeroed() };
-        let field_name = name.map(|s| {
-            CString::new(s).context(ErrorKind::StrContentError)
-        }).map_or(Ok(None), |n| n.map(Some))?;
+        let field_name = name
+            .map(|s| CString::new(s).context(ErrorKind::StrContentError))
+            .map_or(Ok(None), |n| n.map(Some))?;
 
         let name_ptr = field_name.as_ref().map_or(std::ptr::null(), |s| s.as_ptr());
         unsafe {
@@ -201,9 +201,9 @@ impl Msg {
             id.is_some(),
             "One of id or name must be provided."
         );
-        let field_name = name.map(|s| {
-            CString::new(s).context(ErrorKind::StrContentError)
-        }).map_or(Ok(None), |n| n.map(Some))?;
+        let field_name = name
+            .map(|s| CString::new(s).context(ErrorKind::StrContentError))
+            .map_or(Ok(None), |n| n.map(Some))?;
 
         let name_ptr = field_name.as_ref().map_or(std::ptr::null(), |m| m.as_ptr());
         unsafe { tibrvMsg_RemoveFieldEx(self.inner, name_ptr, id.unwrap_or(0) as u16) }
