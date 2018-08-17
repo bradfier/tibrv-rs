@@ -47,7 +47,7 @@ TIBCO Software, and are not provided with this software package.
 Refer to your own TIBCO License terms for details.
 
 ## Contribution
-Please see ([CONTRIBUTING.md](CONTRIBUTING.md)] for more details on how you can
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) for more details on how you can
 contribute to the project.
 
 Unless you explicitly state otherwise, any contribution intentionally
