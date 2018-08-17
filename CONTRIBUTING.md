@@ -44,3 +44,7 @@ features could also have an example or two documenting their usage.
 All code in tibrv-rs is formatted with the default `rustfmt` profile,
 please run `cargo fmt` before submitting your pull request.
 
+## Licensing
+Unless you explicitly state otherwise, any contribution intentionally
+submitted for inclusion in the work by you, as defined in the Apache-2.0
+license, shall be dual licensed as described in [README.md](README.md).

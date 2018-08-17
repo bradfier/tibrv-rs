@@ -36,6 +36,7 @@ features = ["tibrv_8_4"]
 
 ## License
 `tibrv-rs` is licensed under either of
+
  * Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
  * MIT License ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
 
@@ -44,6 +45,15 @@ at your option.
 `TIBCO Rendezvous`, and all related components therein are property of
 TIBCO Software, and are not provided with this software package.
 Refer to your own TIBCO License terms for details.
+
+## Contribution
+Please see ([CONTRIBUTING.md](CONTRIBUTING.md)] for more details on how you can
+contribute to the project.
+
+Unless you explicitly state otherwise, any contribution intentionally
+submitted for inclusion in the work by you, as defined in the Apache-2.0
+license, shall be dual licensed as above, without any additional terms or
+conditions.
 
 ## Naming
 For the sake of clarity, the name of the *project* is "tibrv-rs", and the name of the *crate* is "tibrv".
