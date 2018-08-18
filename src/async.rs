@@ -133,40 +133,36 @@ pub struct AsyncSub {
 }
 
 impl AsyncSub {
-    fn next(&mut self) -> io::Result<Msg> {
+    fn next(&mut self) -> Result<Async<Option<Msg>>, TibrvError> {
         // It's possible our queue was pushed into from another
         // event, so optimistically check for a message.
         if let Ok(msg) = self.sub.try_next() {
-            return Ok(msg);
+            return Ok(Async::Ready(Some(msg)));
         }
         let ready = mio::Ready::readable();
         if let Ok(Async::NotReady) = self.io.poll_read_ready(ready) {
-            return Err(io::Error::new(io::ErrorKind::WouldBlock, "not ready"));
+            return Ok(Async::NotReady);
         }
         match self.sub.try_next() {
             Err(e) => {
                 if e == mpsc::TryRecvError::Empty {
-                    self.io.clear_read_ready(ready)?;
-
-                    return Err(io::Error::new(
-                        io::ErrorKind::WouldBlock,
-                        "no messages",
-                    ));
+                    self.io.clear_read_ready(ready).unwrap();
+                    return Ok(Async::NotReady);
                 }
                 // Only other error from a Receiver is a broken stream
-                Err(io::Error::new(io::ErrorKind::BrokenPipe, "channel closed"))
+                return Err(ErrorKind::QueueError.into());
             }
-            Ok(msg) => Ok(msg),
+            Ok(msg) => Ok(Async::Ready(Some(msg))),
         }
     }
 }
 
 impl Stream for AsyncSub {
     type Item = Msg;
-    type Error = io::Error;
+    type Error = TibrvError;
 
-    fn poll(&mut self) -> Poll<Option<Msg>, io::Error> {
-        Ok(Async::Ready(Some(try_nb!(self.next()))))
+    fn poll(&mut self) -> Poll<Option<Msg>, Self::Error> {
+        Ok(self.next()?)
     }
 }
 

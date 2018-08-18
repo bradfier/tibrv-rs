@@ -229,7 +229,7 @@ impl Drop for Transport {
 #[cfg(feature = "tokio")]
 impl Sink for Transport {
     type SinkItem = Msg;
-    type SinkError = io::Error; // Should eventually be tibrv::Error
+    type SinkError = TibrvError; // Should eventually be tibrv::Error
 
     // libtibrv doesn't provide an explicit "async send" routine
     // From the documentation it looks like tibrvTransport_Send
@@ -241,9 +241,7 @@ impl Sink for Transport {
     ) -> StartSend<Self::SinkItem, Self::SinkError> {
         // Here we do the send immediately, then always return
         // complete when poll_complete is called later.
-        Transport::send(self, &mut item).map_err(|_| {
-            io::Error::new(io::ErrorKind::Other, "Unable to send on transport")
-        })?;
+        Transport::send(self, &mut item)?;
         Ok(AsyncSink::Ready)
     }
 
