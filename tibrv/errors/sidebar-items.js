@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["ErrorKind","A list of general error categories."]],"struct":[["TibrvError","The error type for operations on the types provided in this crate."]]});

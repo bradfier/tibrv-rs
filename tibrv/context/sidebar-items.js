@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["RvCtx","A struct representing the Rendezvous internal machinery which must be set up before attempting to create `Transports` or `Subscriptions`"],["Transport","A struct representing a Rendezvous transport object."],["TransportBuilder","A builder for a Rendezvous transport object."]]});
