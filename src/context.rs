@@ -229,7 +229,7 @@ impl Drop for Transport {
 #[cfg(feature = "tokio")]
 impl Sink for Transport {
     type SinkItem = Msg;
-    type SinkError = TibrvError; // Should eventually be tibrv::Error
+    type SinkError = TibrvError;
 
     // libtibrv doesn't provide an explicit "async send" routine
     // From the documentation it looks like tibrvTransport_Send
