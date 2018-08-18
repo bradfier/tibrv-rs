@@ -10,11 +10,11 @@ use std::ptr::null;
 use tibrv_sys::*;
 
 #[cfg(feature = "tokio")]
-use async::{AsyncQueue, AsyncReq, AsyncSub};
+use async::{AsyncQueue, AsyncReply, AsyncReq, AsyncSub};
 #[cfg(feature = "tokio")]
-use futures::prelude::{Async, AsyncSink, Poll, Sink, StartSend};
-#[cfg(feature = "tokio")]
-use std::io;
+use futures::prelude::{
+    Async, AsyncSink, Future, IntoFuture, Poll, Sink, StartSend, Stream,
+};
 #[cfg(feature = "tokio")]
 use tokio::reactor::Handle;
 
@@ -268,6 +268,26 @@ impl Transport {
                 self.send(&mut reply)?
             }
         }
+    }
+
+    #[cfg(feature = "tokio")]
+    pub fn async_serve<F, G>(
+        self,
+        handle: &Handle,
+        subject: &str,
+        f: F,
+    ) -> impl Future<Item = (), Error = TibrvError>
+    where
+        F: Fn(Msg) -> G,
+        G: IntoFuture<Item = Msg, Error = TibrvError>,
+    {
+        let sub = self.async_sub(handle, subject).unwrap();
+
+        sub.and_then(move |msg| AsyncReply {
+            subject: msg.get_reply_subject().unwrap().unwrap(),
+            future: f(msg).into_future(),
+        }).forward(self)
+            .then(|_| Ok(()))
     }
 
     #[cfg(feature = "tokio")]

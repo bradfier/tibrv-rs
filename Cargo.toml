@@ -48,3 +48,7 @@ name = "client"
 [[example]]
 name = "async_client"
 required-features = [ "async" ]
+
+[[example]]
+name = "async_server"
+required-features = [ "async" ]

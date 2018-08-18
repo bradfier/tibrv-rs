@@ -6,7 +6,6 @@
 use futures::stream::Stream;
 use futures::{Async, Future, Poll};
 use mio;
-use std::io;
 use std::sync::{mpsc, Arc, Mutex};
 use tibrv_sys::*;
 use tokio::reactor::{Handle, PollEvented2};
@@ -16,22 +15,6 @@ use errors::*;
 use event::{Queue, Subscription};
 use failure::*;
 use message::Msg;
-
-/// Convenience macro for working with `io::Result<T>` types.
-///
-/// Copied from `tokio_core` for use where the sub crate isn't included in
-/// this crate.
-macro_rules! try_nb {
-    ($e:expr) => {
-        match $e {
-            Ok(t) => t,
-            Err(ref e) if e.kind() == ::std::io::ErrorKind::WouldBlock => {
-                return Ok(::futures::Async::NotReady)
-            }
-            Err(e) => return Err(e.into()),
-        }
-    };
-}
 
 /// Struct representing an asynchronous Rendezvous event queue.
 ///
@@ -190,6 +173,29 @@ impl Future for AsyncReq {
         match self.sub.poll().unwrap() {
             Async::Ready(Some(v)) => Ok(Async::Ready(v)),
             Async::Ready(None) => Err(ErrorKind::QueueError.into()),
+            Async::NotReady => Ok(Async::NotReady),
+        }
+    }
+}
+
+pub(crate) struct AsyncReply<F> {
+    pub subject: String,
+    pub future: F,
+}
+
+impl<F> Future for AsyncReply<F>
+where
+    F: Future<Item = Msg, Error = TibrvError>,
+{
+    type Item = F::Item;
+    type Error = F::Error;
+
+    fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
+        match self.future.poll()? {
+            Async::Ready(mut msg) => {
+                msg.set_send_subject(&self.subject).unwrap();
+                Ok(Async::Ready(msg))
+            }
             Async::NotReady => Ok(Async::NotReady),
         }
     }
