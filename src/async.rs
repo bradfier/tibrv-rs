@@ -133,6 +133,7 @@ pub struct AsyncSub {
 }
 
 impl AsyncSub {
+    // TODO Create a more specific ErrorKind for these failures
     fn next(&mut self) -> Result<Async<Option<Msg>>, TibrvError> {
         // It's possible our queue was pushed into from another
         // event, so optimistically check for a message.
@@ -146,7 +147,9 @@ impl AsyncSub {
         match self.sub.try_next() {
             Err(e) => {
                 if e == mpsc::TryRecvError::Empty {
-                    self.io.clear_read_ready(ready).unwrap();
+                    self.io
+                        .clear_read_ready(ready)
+                        .expect("Failed clearing mio readiness");
                     return Ok(Async::NotReady);
                 }
                 // Only other error from a Receiver is a broken stream
