@@ -17,6 +17,7 @@ sources:
 environment:
     TIBRV: $HOME/tibco
     LD_LIBRARY_PATH: $HOME/tibco/lib
+    GIT_SSH_COMMAND: '"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"'
 
 tasks:
     - setup: |
