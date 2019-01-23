@@ -1,0 +1,39 @@
+image: archlinux
+
+packages:
+    - rsync
+    - curl
+    - clang
+    - rust
+    - python-ghp-import
+
+sources:
+    - https://github.com/bradfier/tibrv-rs
+
+environment:
+    TIBRV: $HOME/tibco
+    LD_LIBRARY_PATH: $HOME/tibco/lib
+
+tasks:
+    - setup: |
+        curl -O https://radio.bradfirj.co.uk/files/tibco.tar.gz
+        tar -xf tibco.tar.gz
+
+    - build: |
+        cd tibrv-rs
+        cargo build --all-features
+
+    - test: |
+        cd tibrv-rs
+        cargo test --all-features
+
+    - doc: |
+        cd tibrv-rs
+        if [ "$(git rev-parse master)" = "$(git rev-parse HEAD)" ]; then
+          cargo doc --all-features
+          echo '<meta http-equiv=refresh content=0;url=tibrv-rs/index.html>' > target/doc/index.html
+          ghp-import -n target/doc
+          git push ssh://git@github.com/bradfier/tibrv-rs.git gh-pages
+        else
+          echo "Not on master, skipping..."
+        fi

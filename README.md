@@ -1,5 +1,5 @@
 # tibrv-rs
-[![Build Status](https://travis-ci.org/bradfier/tibrv-rs.svg?branch=travis)](https://travis-ci.org/bradfier/tibrv-rs) [![Latest Version](https://img.shields.io/crates/v/tibrv.svg)](https://crates.io/crates/tibrv)
+[![Latest Version](https://img.shields.io/crates/v/tibrv.svg)](https://crates.io/crates/tibrv)
 
 Rust bindings for TIBCO Rendezvous, a message-oriented middleware.
 
