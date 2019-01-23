@@ -1,10 +1,14 @@
 image: archlinux
 
+secrets:
+    - b1dac407-e582-40e8-82e9-b9fda2b105e9
+
 packages:
     - rsync
     - curl
     - clang
     - rust
+    - python-setuptools
     - python-ghp-import
 
 sources:
