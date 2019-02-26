@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `/home/build/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-timer-0.2.8/src/timer/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `/home/build/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-timer-0.2.10/src/timer/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -485,6 +485,8 @@
 <span id="485">485</span>
 <span id="486">486</span>
 <span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Timer implementation.</span>
 <span class="doccomment">//!</span>
@@ -498,23 +500,25 @@
 <span class="doccomment">//! `Clone`, `Send`, and `Sync`. This type is used to create instances of</span>
 <span class="doccomment">//! [`Delay`].</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! The [`Now`] trait describes how to get an `Instance` representing the</span>
+<span class="doccomment">//! The [`Now`] trait describes how to get an [`Instant`] representing the</span>
 <span class="doccomment">//! current moment in time. [`SystemNow`] is the default implementation, where</span>
-<span class="doccomment">//! [`Now::now`] is implemented by calling `Instant::now`.</span>
+<span class="doccomment">//! [`Now::now`] is implemented by calling [`Instant::now`].</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [`Timer`] is generic over [`Now`]. This allows the source of time to be</span>
 <span class="doccomment">//! customized. This ability is especially useful in tests and any environment</span>
 <span class="doccomment">//! where determinism is necessary.</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! Note, when using the Tokio runtime, the `Timer` does not need to be manually</span>
-<span class="doccomment">//! setup as the runtime comes pre-configured with a `Timer` instance.</span>
+<span class="doccomment">//! Note, when using the Tokio runtime, the [`Timer`] does not need to be manually</span>
+<span class="doccomment">//! setup as the runtime comes pre-configured with a [`Timer`] instance.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [`Timer`]: struct.Timer.html</span>
 <span class="doccomment">//! [`Handle`]: struct.Handle.html</span>
 <span class="doccomment">//! [`Delay`]: ../struct.Delay.html</span>
-<span class="doccomment">//! [`Now`]: trait.Now.html</span>
-<span class="doccomment">//! [`Now::now`]: trait.Now.html#method.now</span>
+<span class="doccomment">//! [`Now`]: ../clock/trait.Now.html</span>
+<span class="doccomment">//! [`Now::now`]: ../clock/trait.Now.html#method.now</span>
 <span class="doccomment">//! [`SystemNow`]: struct.SystemNow.html</span>
+<span class="doccomment">//! [`Instant`]: https://doc.rust-lang.org/std/time/struct.Instant.html</span>
+<span class="doccomment">//! [`Instant::now`]: https://doc.rust-lang.org/std/time/struct.Instant.html#method.now</span>
 
 <span class="comment">// This allows the usage of the old `Now` trait.</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
@@ -548,18 +552,18 @@
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">atomic</span>::<span class="ident">Ordering</span>::<span class="ident">SeqCst</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">usize</span>;
 
-<span class="doccomment">/// Timer implementation that drives [`Delay`], [`Interval`], and [`Deadline`].</span>
+<span class="doccomment">/// Timer implementation that drives [`Delay`], [`Interval`], and [`Timeout`].</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// A `Timer` instance tracks the state necessary for managing time and</span>
 <span class="doccomment">/// notifying the [`Delay`] instances once their deadlines are reached.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// It is expected that a single `Timer` instance manages many individual</span>
-<span class="doccomment">/// `Delay` instances. The `Timer` implementation is thread-safe and, as such,</span>
+<span class="doccomment">/// [`Delay`] instances. The `Timer` implementation is thread-safe and, as such,</span>
 <span class="doccomment">/// is able to handle callers from across threads.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// Callers do not use `Timer` directly to create `Delay` instances.  Instead,</span>
-<span class="doccomment">/// [`Handle`] is used. A handle for the timer instance is obtained by calling</span>
-<span class="doccomment">/// [`handle`]. [`Handle`] is the type that implements `Clone` and is `Send +</span>
+<span class="doccomment">/// Callers do not use `Timer` directly to create [`Delay`] instances.  Instead,</span>
+<span class="doccomment">/// [`Handle`][Handle.struct] is used. A handle for the timer instance is obtained by calling</span>
+<span class="doccomment">/// [`handle`]. [`Handle`][Handle.struct] is the type that implements `Clone` and is `Send +</span>
 <span class="doccomment">/// Sync`.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// After creating the `Timer` instance, the caller must repeatedly call</span>
@@ -569,9 +573,9 @@
 <span class="doccomment">/// The `Timer` has a resolution of one millisecond. Any unit of time that falls</span>
 <span class="doccomment">/// between milliseconds are rounded up to the next millisecond.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// When the `Timer` instance is dropped, any outstanding `Delay` instance that</span>
+<span class="doccomment">/// When the `Timer` instance is dropped, any outstanding [`Delay`] instance that</span>
 <span class="doccomment">/// has not elapsed will be notified with an error. At this point, calling</span>
-<span class="doccomment">/// `poll` on the `Delay` instance will result in `Err` being returned.</span>
+<span class="doccomment">/// `poll` on the [`Delay`] instance will result in `Err` being returned.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Implementation</span>
 <span class="doccomment">///</span>
@@ -600,17 +604,17 @@
 <span class="doccomment">/// When the timer processes entries at level zero, it will notify all the</span>
 <span class="doccomment">/// [`Delay`] instances as their deadlines have been reached. For all higher</span>
 <span class="doccomment">/// levels, all entries will be redistributed across the wheel at the next level</span>
-<span class="doccomment">/// down. Eventually, as time progresses, entries will `Delay` instances will</span>
+<span class="doccomment">/// down. Eventually, as time progresses, entries will [`Delay`] instances will</span>
 <span class="doccomment">/// either be canceled (dropped) or their associated entries will reach level</span>
 <span class="doccomment">/// zero and be notified.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// [`Delay`]: ../struct.Delay.html</span>
 <span class="doccomment">/// [`Interval`]: ../struct.Interval.html</span>
-<span class="doccomment">/// [`Deadline`]: ../struct.Deadline.html</span>
+<span class="doccomment">/// [`Timeout`]: ../struct.Timeout.html</span>
 <span class="doccomment">/// [paper]: http://www.cs.columbia.edu/~nahum/w6998/papers/ton97-timing-wheels.pdf</span>
 <span class="doccomment">/// [`handle`]: #method.handle</span>
 <span class="doccomment">/// [`turn`]: #method.turn</span>
-<span class="doccomment">/// [`Handle`]: struct.Handle.html</span>
+<span class="doccomment">/// [Handle.struct]: struct.Handle.html</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Timer</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">N</span> <span class="op">=</span> <span class="ident">SystemNow</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Shared state</span>

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `/home/build/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-threadpool-0.1.10/src/worker/entry.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>entry.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `/home/build/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-threadpool-0.1.11/src/worker/entry.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>entry.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -235,6 +235,102 @@
 <span id="235">235</span>
 <span id="236">236</span>
 <span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">park</span>::{<span class="ident">BoxPark</span>, <span class="ident">BoxUnpark</span>};
 <span class="kw">use</span> <span class="ident">task</span>::<span class="ident">Task</span>;
@@ -243,11 +339,14 @@
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">cell</span>::<span class="ident">UnsafeCell</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fmt</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">Arc</span>;
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">atomic</span>::{<span class="ident">AtomicUsize</span>, <span class="ident">Ordering</span>};
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">atomic</span>::<span class="ident">Ordering</span>::{<span class="ident">AcqRel</span>, <span class="ident">Relaxed</span>};
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">atomic</span>::{<span class="ident">AtomicBool</span>, <span class="ident">AtomicUsize</span>, <span class="ident">Ordering</span>};
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">atomic</span>::<span class="ident">Ordering</span>::{<span class="ident">Acquire</span>, <span class="ident">AcqRel</span>, <span class="ident">Relaxed</span>, <span class="ident">Release</span>};
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">time</span>::<span class="ident">Duration</span>;
 
+<span class="kw">use</span> <span class="ident">crossbeam</span>::<span class="ident">queue</span>::<span class="ident">SegQueue</span>;
 <span class="kw">use</span> <span class="ident">crossbeam_utils</span>::<span class="ident">CachePadded</span>;
 <span class="kw">use</span> <span class="ident">deque</span>;
+<span class="kw">use</span> <span class="ident">slab</span>::<span class="ident">Slab</span>;
 
 <span class="comment">// TODO: None of the fields should be public</span>
 <span class="comment">//</span>
@@ -270,10 +369,20 @@
     <span class="ident">stealer</span>: <span class="ident">deque</span>::<span class="ident">Stealer</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Task</span><span class="op">&gt;&gt;</span>,
 
     <span class="comment">// Thread parker</span>
-    <span class="kw">pub</span> <span class="ident">park</span>: <span class="ident">UnsafeCell</span><span class="op">&lt;</span><span class="ident">BoxPark</span><span class="op">&gt;</span>,
+    <span class="ident">park</span>: <span class="ident">UnsafeCell</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BoxPark</span><span class="op">&gt;&gt;</span>,
 
     <span class="comment">// Thread unparker</span>
-    <span class="kw">pub</span> <span class="ident">unpark</span>: <span class="ident">BoxUnpark</span>,
+    <span class="ident">unpark</span>: <span class="ident">UnsafeCell</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BoxUnpark</span><span class="op">&gt;&gt;</span>,
+
+    <span class="comment">// Tasks that have been first polled by this worker, but not completed yet.</span>
+    <span class="ident">running_tasks</span>: <span class="ident">UnsafeCell</span><span class="op">&lt;</span><span class="ident">Slab</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Task</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
+
+    <span class="comment">// Tasks that have been first polled by this worker, but completed by another worker.</span>
+    <span class="ident">remotely_completed_tasks</span>: <span class="ident">SegQueue</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Task</span><span class="op">&gt;&gt;</span>,
+
+    <span class="comment">// Set to `true` when `remotely_completed_tasks` has tasks that need to be removed from</span>
+    <span class="comment">// `running_tasks`.</span>
+    <span class="ident">needs_drain</span>: <span class="ident">AtomicBool</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">WorkerEntry</span> {
@@ -285,8 +394,11 @@
             <span class="ident">next_sleeper</span>: <span class="ident">UnsafeCell</span>::<span class="ident">new</span>(<span class="number">0</span>),
             <span class="ident">worker</span>: <span class="ident">w</span>,
             <span class="ident">stealer</span>: <span class="ident">s</span>,
-            <span class="ident">park</span>: <span class="ident">UnsafeCell</span>::<span class="ident">new</span>(<span class="ident">park</span>),
-            <span class="ident">unpark</span>,
+            <span class="ident">park</span>: <span class="ident">UnsafeCell</span>::<span class="ident">new</span>(<span class="prelude-val">Some</span>(<span class="ident">park</span>)),
+            <span class="ident">unpark</span>: <span class="ident">UnsafeCell</span>::<span class="ident">new</span>(<span class="prelude-val">Some</span>(<span class="ident">unpark</span>)),
+            <span class="ident">running_tasks</span>: <span class="ident">UnsafeCell</span>::<span class="ident">new</span>(<span class="ident">Slab</span>::<span class="ident">new</span>()),
+            <span class="ident">remotely_completed_tasks</span>: <span class="ident">SegQueue</span>::<span class="ident">new</span>(),
+            <span class="ident">needs_drain</span>: <span class="ident">AtomicBool</span>::<span class="ident">new</span>(<span class="bool-val">false</span>),
         }
     }
 
@@ -338,7 +450,7 @@
             <span class="ident">Sleeping</span> <span class="op">=&gt;</span> {
                 <span class="comment">// The worker is currently sleeping, the condition variable must</span>
                 <span class="comment">// be signaled</span>
-                <span class="self">self</span>.<span class="ident">wakeup</span>();
+                <span class="self">self</span>.<span class="ident">unpark</span>();
                 <span class="bool-val">true</span>
             }
             <span class="ident">Shutdown</span> <span class="op">=&gt;</span> <span class="bool-val">false</span>,
@@ -401,7 +513,7 @@
         }
 
         <span class="comment">// Wakeup the worker</span>
-        <span class="self">self</span>.<span class="ident">wakeup</span>();
+        <span class="self">self</span>.<span class="ident">unpark</span>();
     }
 
     <span class="doccomment">/// Pop a task</span>
@@ -440,14 +552,94 @@
         }
     }
 
+    <span class="doccomment">/// Parks the worker thread.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">park</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">park</span>) <span class="op">=</span> <span class="kw">unsafe</span> { (<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">park</span>.<span class="ident">get</span>()).<span class="ident">as_mut</span>() } {
+            <span class="ident">park</span>.<span class="ident">park</span>().<span class="ident">unwrap</span>();
+        }
+    }
+
+    <span class="doccomment">/// Parks the worker thread for at most `duration`.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">park_timeout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">duration</span>: <span class="ident">Duration</span>) {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">park</span>) <span class="op">=</span> <span class="kw">unsafe</span> { (<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">park</span>.<span class="ident">get</span>()).<span class="ident">as_mut</span>() } {
+            <span class="ident">park</span>.<span class="ident">park_timeout</span>(<span class="ident">duration</span>).<span class="ident">unwrap</span>();
+        }
+    }
+
+    <span class="doccomment">/// Unparks the worker thread.</span>
     <span class="attribute">#[<span class="ident">inline</span>]</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">push_internal</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">task</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Task</span><span class="op">&gt;</span>) {
-        <span class="self">self</span>.<span class="ident">worker</span>.<span class="ident">push</span>(<span class="ident">task</span>);
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">unpark</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">park</span>) <span class="op">=</span> <span class="kw">unsafe</span> { (<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">unpark</span>.<span class="ident">get</span>()).<span class="ident">as_ref</span>() } {
+            <span class="ident">park</span>.<span class="ident">unpark</span>();
+        }
+    }
+
+    <span class="doccomment">/// Registers a task in this worker.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Called when the task is being polled for the first time.</span>
+    <span class="attribute">#[<span class="ident">inline</span>]</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">register_task</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">task</span>: <span class="kw-2">&amp;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Task</span><span class="op">&gt;</span>) {
+        <span class="kw">let</span> <span class="ident">running_tasks</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">running_tasks</span>.<span class="ident">get</span>() };
+
+        <span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">running_tasks</span>.<span class="ident">insert</span>(<span class="ident">task</span>.<span class="ident">clone</span>());
+        <span class="ident">task</span>.<span class="ident">reg_index</span>.<span class="ident">set</span>(<span class="ident">key</span>);
+    }
+
+    <span class="doccomment">/// Unregisters a task from this worker.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Called when the task is completed and was previously registered in this worker.</span>
+    <span class="attribute">#[<span class="ident">inline</span>]</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">unregister_task</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">task</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Task</span><span class="op">&gt;</span>) {
+        <span class="kw">let</span> <span class="ident">running_tasks</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">running_tasks</span>.<span class="ident">get</span>() };
+        <span class="ident">running_tasks</span>.<span class="ident">remove</span>(<span class="ident">task</span>.<span class="ident">reg_index</span>.<span class="ident">get</span>());
+        <span class="self">self</span>.<span class="ident">drain_remotely_completed_tasks</span>();
+    }
+
+    <span class="doccomment">/// Unregisters a task from this worker.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Called when the task is completed by another worker and was previously registered in this</span>
+    <span class="doccomment">/// worker.</span>
+    <span class="attribute">#[<span class="ident">inline</span>]</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">remotely_complete_task</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">task</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Task</span><span class="op">&gt;</span>) {
+        <span class="self">self</span>.<span class="ident">remotely_completed_tasks</span>.<span class="ident">push</span>(<span class="ident">task</span>);
+        <span class="self">self</span>.<span class="ident">needs_drain</span>.<span class="ident">store</span>(<span class="bool-val">true</span>, <span class="ident">Release</span>);
+    }
+
+    <span class="doccomment">/// Drops the remaining incomplete tasks and the parker associated with this worker.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// This function is called by the shutdown trigger.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">shutdown</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="self">self</span>.<span class="ident">drain_remotely_completed_tasks</span>();
+
+        <span class="comment">// Abort all incomplete tasks.</span>
+        <span class="kw">let</span> <span class="ident">running_tasks</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">running_tasks</span>.<span class="ident">get</span>() };
+        <span class="kw">for</span> (<span class="kw">_</span>, <span class="ident">task</span>) <span class="kw">in</span> <span class="ident">running_tasks</span>.<span class="ident">iter</span>() {
+            <span class="ident">task</span>.<span class="ident">abort</span>();
+        }
+        <span class="ident">running_tasks</span>.<span class="ident">clear</span>();
+
+        <span class="comment">// Drop the parker.</span>
+        <span class="kw">unsafe</span> {
+            <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">park</span>.<span class="ident">get</span>() <span class="op">=</span> <span class="prelude-val">None</span>;
+            <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">unpark</span>.<span class="ident">get</span>() <span class="op">=</span> <span class="prelude-val">None</span>;
+        }
+    }
+
+    <span class="doccomment">/// Drains the `remotely_completed_tasks` queue and removes tasks from `running_tasks`.</span>
+    <span class="attribute">#[<span class="ident">inline</span>]</span>
+    <span class="kw">fn</span> <span class="ident">drain_remotely_completed_tasks</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">needs_drain</span>.<span class="ident">compare_and_swap</span>(<span class="bool-val">true</span>, <span class="bool-val">false</span>, <span class="ident">Acquire</span>) {
+            <span class="kw">let</span> <span class="ident">running_tasks</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">running_tasks</span>.<span class="ident">get</span>() };
+
+            <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">task</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">remotely_completed_tasks</span>.<span class="ident">try_pop</span>() {
+                <span class="ident">running_tasks</span>.<span class="ident">remove</span>(<span class="ident">task</span>.<span class="ident">reg_index</span>.<span class="ident">get</span>());
+            }
+        }
     }
 
     <span class="attribute">#[<span class="ident">inline</span>]</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">wakeup</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
-        <span class="self">self</span>.<span class="ident">unpark</span>.<span class="ident">unpark</span>();
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">push_internal</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">task</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Task</span><span class="op">&gt;</span>) {
+        <span class="self">self</span>.<span class="ident">worker</span>.<span class="ident">push</span>(<span class="ident">task</span>);
     }
 
     <span class="attribute">#[<span class="ident">inline</span>]</span>

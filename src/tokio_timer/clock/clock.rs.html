@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `/home/build/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-timer-0.2.8/src/clock/clock.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>clock.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `/home/build/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-timer-0.2.10/src/clock/clock.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>clock.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -136,6 +136,11 @@
 <span id="136">136</span>
 <span id="137">137</span>
 <span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">clock</span>::<span class="ident">Now</span>;
 <span class="kw">use</span> <span class="ident">timer</span>;
@@ -149,8 +154,11 @@
 
 <span class="doccomment">/// A handle to a source of time.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// `Clock` instances return `Instant` values corresponding to &quot;now&quot;. The source</span>
-<span class="doccomment">/// of these values is configurable. The default source is `Instant::now()`.</span>
+<span class="doccomment">/// `Clock` instances return [`Instant`] values corresponding to &quot;now&quot;. The source</span>
+<span class="doccomment">/// of these values is configurable. The default source is [`Instant::now`].</span>
+<span class="doccomment">/// </span>
+<span class="doccomment">/// [`Instant`]: https://doc.rust-lang.org/std/time/struct.Instant.html</span>
+<span class="doccomment">/// [`Instant::now`]: https://doc.rust-lang.org/std/time/struct.Instant.html#method.now</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Clock</span> {
     <span class="ident">now</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Now</span><span class="op">&gt;&gt;</span>,
@@ -208,8 +216,10 @@
         }
     }
 
-    <span class="doccomment">/// Return a new `Clock` instance that uses `Instant::now()` as the source</span>
+    <span class="doccomment">/// Return a new `Clock` instance that uses [`Instant::now`] as the source</span>
     <span class="doccomment">/// of time.</span>
+    <span class="doccomment">/// </span>
+    <span class="doccomment">/// [`Instant::now`]: https://doc.rust-lang.org/std/time/struct.Instant.html#method.now</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">system</span>() <span class="op">-&gt;</span> <span class="ident">Clock</span> {
         <span class="ident">Clock</span> {
             <span class="ident">now</span>: <span class="prelude-val">None</span>,
