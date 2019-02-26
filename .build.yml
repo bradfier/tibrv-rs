@@ -36,7 +36,7 @@ tasks:
         cd tibrv-rs
         if [ "$(git rev-parse master)" = "$(git rev-parse HEAD)" ]; then
           cargo doc --all-features
-          echo '<meta http-equiv=refresh content=0;url=tibrv-rs/index.html>' > target/doc/index.html
+          echo '<meta http-equiv=refresh content=0;url=tibrv/index.html>' > target/doc/index.html
           ghp-import -n target/doc
           git push ssh://git@github.com/bradfier/tibrv-rs.git gh-pages
         else
