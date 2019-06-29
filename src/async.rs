@@ -24,7 +24,7 @@ use message::Msg;
 /// drive a `Readiness` stream for use with Tokio.
 pub(crate) struct AsyncQueue {
     queue: Queue,
-    listeners: Arc<Mutex<Vec<mio::SetReadiness>>>,
+    listeners: Box<Mutex<Vec<mio::SetReadiness>>>,
 }
 
 impl AsyncQueue {
@@ -32,7 +32,7 @@ impl AsyncQueue {
     pub fn new(ctx: RvCtx) -> Result<Self, TibrvError> {
         Ok(AsyncQueue {
             queue: Queue::new(ctx)?,
-            listeners: Arc::new(Mutex::new(Vec::new())),
+            listeners: Box::new(Mutex::new(Vec::new())),
         })
     }
 
@@ -43,13 +43,8 @@ impl AsyncQueue {
         // As with the sync version, we can't panic and unwind into the
         // caller, so we catch any recoverable panic and ignore it.
         let _ = ::std::panic::catch_unwind(move || {
-            let listen_ptr = closure as *mut Mutex<Vec<mio::SetReadiness>>;
-            {
-                let vec = (&*listen_ptr).lock();
-                for l in &*vec {
-                    let _ = l.set_readiness(mio::Ready::readable());
-                }
-            }
+            let listen_ptr = closure as *mut mio::SetReadiness;
+            (&*listen_ptr).set_readiness(mio::Ready::readable());
         });
     }
 
@@ -75,18 +70,11 @@ impl AsyncQueue {
     ) -> Result<AsyncSub, TibrvError> {
         let (registration, ready) = mio::Registration::new2();
 
-        // This shouldn't ever fail, if it does, something panic-worthy has
-        // gone wrong.
-        let mut listeners = self
-            .listeners
-            .lock();
-
-        listeners.push(ready);
         let sub = self.queue.subscribe(tp, subject)?;
 
         // Set up event hook
-        let arc = Arc::clone(&self.listeners);
-        let l_ptr = Arc::into_raw(arc) as *const Mutex<Vec<mio::SetReadiness>>;
+        let listener = Box::new(ready);
+        let l_ptr = &*listener as *const mio::SetReadiness;
         let result = unsafe {
             tibrvQueue_SetHook(
                 sub.queue.inner,
@@ -102,6 +90,7 @@ impl AsyncQueue {
             sub,
             io: PollEvented2::new_with_handle(registration, handle)
                 .context(ErrorKind::AsyncRegError)?,
+            listener,
         })
     }
 }
@@ -111,6 +100,8 @@ impl AsyncQueue {
 pub struct AsyncSub {
     sub: Subscription,
     io: PollEvented2<mio::Registration>,
+    // We need to retain ownership of the SetReadiness side of the mio registration
+    listener: Box<mio::SetReadiness>,
 }
 
 impl AsyncSub {
