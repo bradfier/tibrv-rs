@@ -6,7 +6,9 @@
 use futures::stream::Stream;
 use futures::{Async, Future, Poll};
 use mio;
-use std::sync::{mpsc, Arc, Mutex};
+use std::io;
+use std::sync::{Arc, mpsc};
+use parking_lot::Mutex;
 use tibrv_sys::*;
 use tokio::reactor::{Handle, PollEvented2};
 
@@ -41,16 +43,13 @@ impl AsyncQueue {
         // As with the sync version, we can't panic and unwind into the
         // caller, so we catch any recoverable panic and ignore it.
         let _ = ::std::panic::catch_unwind(move || {
-            let listen_ptr = closure as *const Mutex<Vec<mio::SetReadiness>>;
-            let vec_mutex = Arc::from_raw(listen_ptr);
+            let listen_ptr = closure as *mut Mutex<Vec<mio::SetReadiness>>;
             {
-                let vec = vec_mutex.lock().unwrap();
+                let vec = (&*listen_ptr).lock();
                 for l in &*vec {
                     let _ = l.set_readiness(mio::Ready::readable());
                 }
             }
-            // Don't run Drop on the listener list
-            ::std::mem::forget(vec_mutex);
         });
     }
 
@@ -80,15 +79,14 @@ impl AsyncQueue {
         // gone wrong.
         let mut listeners = self
             .listeners
-            .lock()
-            .expect("Couldn't lock async channel notifier list!");
+            .lock();
 
         listeners.push(ready);
         let sub = self.queue.subscribe(tp, subject)?;
 
         // Set up event hook
-        let l_arc = Arc::clone(&self.listeners);
-        let l_ptr = Arc::into_raw(l_arc);
+        let arc = Arc::clone(&self.listeners);
+        let l_ptr = Arc::into_raw(arc) as *const Mutex<Vec<mio::SetReadiness>>;
         let result = unsafe {
             tibrvQueue_SetHook(
                 sub.queue.inner,

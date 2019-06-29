@@ -113,6 +113,8 @@ extern crate failure_derive;
 extern crate tibrv_sys;
 
 #[cfg(feature = "tokio")]
+extern crate parking_lot;
+#[cfg(feature = "tokio")]
 extern crate futures;
 #[cfg(feature = "tokio")]
 extern crate mio;
