@@ -397,7 +397,6 @@
 <span id="397">397</span>
 <span id="398">398</span>
 <span id="399">399</span>
-<span id="400">400</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Interface for creating and managing the Rendezvous internal machinery</span>
 
@@ -592,14 +591,13 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// The created subject name will be unique for this transport.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_inbox</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">TibrvError</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span>: <span class="ident">Vec</span><span class="op">&lt;</span>::<span class="ident">std</span>::<span class="ident">os</span>::<span class="ident">raw</span>::<span class="ident">c_char</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">with_capacity</span>(<span class="number">128</span>);
-        <span class="ident">buf</span>.<span class="ident">resize</span>(<span class="number">128</span>, <span class="number">0</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span>: <span class="ident">Vec</span><span class="op">&lt;</span>::<span class="ident">std</span>::<span class="ident">os</span>::<span class="ident">raw</span>::<span class="ident">c_char</span><span class="op">&gt;</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="number">0</span>; <span class="number">128</span>];
         <span class="kw">unsafe</span> {
             <span class="ident">tibrvTransport_CreateInbox</span>(<span class="self">self</span>.<span class="ident">inner</span>, <span class="ident">buf</span>.<span class="ident">as_mut_ptr</span>(), <span class="number">128</span>).<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
                 <span class="ident">CString</span>::<span class="ident">from_vec_unchecked</span>(<span class="ident">buf</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="ident">c</span> <span class="kw">as</span> <span class="ident">u8</span>).<span class="ident">collect</span>())
                     .<span class="ident">into_string</span>()
                     .<span class="ident">expect</span>(<span class="string">&quot;C String from CreateInbox contained invalid data&quot;</span>)
-                    .<span class="ident">trim_right_matches</span>(<span class="string">&#39;\0&#39;</span>)
+                    .<span class="ident">trim_end_matches</span>(<span class="string">&#39;\0&#39;</span>)
                     .<span class="ident">to_owned</span>()
             })
         }
@@ -760,7 +758,7 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">version</span>() {
         <span class="kw">let</span> <span class="ident">ctx</span> <span class="op">=</span> <span class="ident">RvCtx</span>::<span class="ident">new</span>().<span class="ident">unwrap</span>();
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">ctx</span>.<span class="ident">version</span>().<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">0</span>);
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">ctx</span>.<span class="ident">version</span>().<span class="ident">is_empty</span>());
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
@@ -776,7 +774,7 @@
         <span class="kw">let</span> <span class="ident">ctx</span> <span class="op">=</span> <span class="ident">RvCtx</span>::<span class="ident">new</span>().<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">tp</span> <span class="op">=</span> <span class="ident">TransportBuilder</span>::<span class="ident">new</span>(<span class="ident">ctx</span>).<span class="ident">create</span>().<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">inbox</span> <span class="op">=</span> <span class="ident">tp</span>.<span class="ident">create_inbox</span>().<span class="ident">unwrap</span>();
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">inbox</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">0</span>);
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">inbox</span>.<span class="ident">is_empty</span>());
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">inbox</span>.<span class="ident">contains</span>(<span class="string">&quot;INBOX&quot;</span>));
         <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">inbox</span>);
     }

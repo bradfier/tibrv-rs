@@ -212,10 +212,6 @@
 <span id="212">212</span>
 <span id="213">213</span>
 <span id="214">214</span>
-<span id="215">215</span>
-<span id="216">216</span>
-<span id="217">217</span>
-<span id="218">218</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Asynchronous interfaces for integrating Rendezvous with Tokio</span>
 <span class="doccomment">//!</span>
@@ -225,9 +221,7 @@
 <span class="kw">use</span> <span class="ident">futures</span>::<span class="ident">stream</span>::<span class="ident">Stream</span>;
 <span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">Async</span>, <span class="ident">Future</span>, <span class="ident">Poll</span>};
 <span class="kw">use</span> <span class="ident">mio</span>;
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">io</span>;
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">mpsc</span>};
-<span class="kw">use</span> <span class="ident">parking_lot</span>::<span class="ident">Mutex</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">mpsc</span>;
 <span class="kw">use</span> <span class="ident">tibrv_sys</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">tokio</span>::<span class="ident">reactor</span>::{<span class="ident">Handle</span>, <span class="ident">PollEvented2</span>};
 
@@ -243,7 +237,6 @@
 <span class="doccomment">/// drive a `Readiness` stream for use with Tokio.</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">AsyncQueue</span> {
     <span class="ident">queue</span>: <span class="ident">Queue</span>,
-    <span class="ident">listeners</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">mio</span>::<span class="ident">SetReadiness</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">AsyncQueue</span> {
@@ -251,19 +244,18 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">ctx</span>: <span class="ident">RvCtx</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TibrvError</span><span class="op">&gt;</span> {
         <span class="prelude-val">Ok</span>(<span class="ident">AsyncQueue</span> {
             <span class="ident">queue</span>: <span class="ident">Queue</span>::<span class="ident">new</span>(<span class="ident">ctx</span>)<span class="question-mark">?</span>,
-            <span class="ident">listeners</span>: <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">Mutex</span>::<span class="ident">new</span>(<span class="ident">Vec</span>::<span class="ident">new</span>())),
         })
     }
 
     <span class="kw">unsafe</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">callback</span>(
         <span class="ident">_queue</span>: <span class="ident">tibrvQueue</span>,
         <span class="ident">closure</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> ::<span class="ident">std</span>::<span class="ident">os</span>::<span class="ident">raw</span>::<span class="ident">c_void</span>,
-    ) <span class="op">-&gt;</span> () {
+    ) {
         <span class="comment">// As with the sync version, we can&#39;t panic and unwind into the</span>
         <span class="comment">// caller, so we catch any recoverable panic and ignore it.</span>
         <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> ::<span class="ident">std</span>::<span class="ident">panic</span>::<span class="ident">catch_unwind</span>(<span class="kw">move</span> <span class="op">||</span> {
             <span class="kw">let</span> <span class="ident">listen_ptr</span> <span class="op">=</span> <span class="ident">closure</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">mio</span>::<span class="ident">SetReadiness</span>;
-            (<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">listen_ptr</span>).<span class="ident">set_readiness</span>(<span class="ident">mio</span>::<span class="ident">Ready</span>::<span class="ident">readable</span>());
+            <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">listen_ptr</span>).<span class="ident">set_readiness</span>(<span class="ident">mio</span>::<span class="ident">Ready</span>::<span class="ident">readable</span>());
         });
     }
 
@@ -309,7 +301,7 @@
             <span class="ident">sub</span>,
             <span class="ident">io</span>: <span class="ident">PollEvented2</span>::<span class="ident">new_with_handle</span>(<span class="ident">registration</span>, <span class="ident">handle</span>)
                 .<span class="ident">context</span>(<span class="ident">ErrorKind</span>::<span class="ident">AsyncRegError</span>)<span class="question-mark">?</span>,
-            <span class="ident">listener</span>,
+            <span class="ident">_listener</span>: <span class="ident">listener</span>,
         })
     }
 }
@@ -320,7 +312,7 @@
     <span class="ident">sub</span>: <span class="ident">Subscription</span>,
     <span class="ident">io</span>: <span class="ident">PollEvented2</span><span class="op">&lt;</span><span class="ident">mio</span>::<span class="ident">Registration</span><span class="op">&gt;</span>,
     <span class="comment">// We need to retain ownership of the SetReadiness side of the mio registration</span>
-    <span class="ident">listener</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">mio</span>::<span class="ident">SetReadiness</span><span class="op">&gt;</span>,
+    <span class="ident">_listener</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">mio</span>::<span class="ident">SetReadiness</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">AsyncSub</span> {
@@ -344,7 +336,7 @@
                     <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Async</span>::<span class="ident">NotReady</span>);
                 }
                 <span class="comment">// Only other error from a Receiver is a broken stream</span>
-                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ErrorKind</span>::<span class="ident">QueueError</span>.<span class="ident">into</span>());
+                <span class="prelude-val">Err</span>(<span class="ident">ErrorKind</span>::<span class="ident">QueueError</span>.<span class="ident">into</span>())
             }
             <span class="prelude-val">Ok</span>(<span class="ident">msg</span>) <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">Async</span>::<span class="ident">Ready</span>(<span class="prelude-val">Some</span>(<span class="ident">msg</span>))),
         }
@@ -425,7 +417,7 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="attribute">#[<span class="ident">ignore</span>]</span>
     <span class="kw">fn</span> <span class="ident">has_hook</span>() {
-        <span class="kw">let</span> <span class="ident">handle</span> <span class="op">=</span> <span class="ident">Handle</span>::<span class="ident">current</span>();
+        <span class="kw">let</span> <span class="ident">handle</span> <span class="op">=</span> <span class="ident">Handle</span>::<span class="ident">default</span>();
 
         <span class="kw">let</span> <span class="ident">ctx</span> <span class="op">=</span> <span class="ident">RvCtx</span>::<span class="ident">new</span>().<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">tp</span> <span class="op">=</span> <span class="ident">TransportBuilder</span>::<span class="ident">new</span>(<span class="ident">ctx</span>.<span class="ident">clone</span>()).<span class="ident">create</span>().<span class="ident">unwrap</span>();
