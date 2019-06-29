@@ -6,9 +6,7 @@
 use futures::stream::Stream;
 use futures::{Async, Future, Poll};
 use mio;
-use std::io;
-use std::sync::{Arc, mpsc};
-use parking_lot::Mutex;
+use std::sync::mpsc;
 use tibrv_sys::*;
 use tokio::reactor::{Handle, PollEvented2};
 
@@ -24,7 +22,6 @@ use message::Msg;
 /// drive a `Readiness` stream for use with Tokio.
 pub(crate) struct AsyncQueue {
     queue: Queue,
-    listeners: Box<Mutex<Vec<mio::SetReadiness>>>,
 }
 
 impl AsyncQueue {
@@ -32,19 +29,18 @@ impl AsyncQueue {
     pub fn new(ctx: RvCtx) -> Result<Self, TibrvError> {
         Ok(AsyncQueue {
             queue: Queue::new(ctx)?,
-            listeners: Box::new(Mutex::new(Vec::new())),
         })
     }
 
     unsafe extern "C" fn callback(
         _queue: tibrvQueue,
         closure: *mut ::std::os::raw::c_void,
-    ) -> () {
+    ) {
         // As with the sync version, we can't panic and unwind into the
         // caller, so we catch any recoverable panic and ignore it.
         let _ = ::std::panic::catch_unwind(move || {
             let listen_ptr = closure as *mut mio::SetReadiness;
-            (&*listen_ptr).set_readiness(mio::Ready::readable());
+            let _ =(&*listen_ptr).set_readiness(mio::Ready::readable());
         });
     }
 
@@ -90,7 +86,7 @@ impl AsyncQueue {
             sub,
             io: PollEvented2::new_with_handle(registration, handle)
                 .context(ErrorKind::AsyncRegError)?,
-            listener,
+            _listener: listener,
         })
     }
 }
@@ -101,7 +97,7 @@ pub struct AsyncSub {
     sub: Subscription,
     io: PollEvented2<mio::Registration>,
     // We need to retain ownership of the SetReadiness side of the mio registration
-    listener: Box<mio::SetReadiness>,
+    _listener: Box<mio::SetReadiness>,
 }
 
 impl AsyncSub {
@@ -125,7 +121,7 @@ impl AsyncSub {
                     return Ok(Async::NotReady);
                 }
                 // Only other error from a Receiver is a broken stream
-                return Err(ErrorKind::QueueError.into());
+                Err(ErrorKind::QueueError.into())
             }
             Ok(msg) => Ok(Async::Ready(Some(msg))),
         }
@@ -206,7 +202,7 @@ mod tests {
     #[test]
     #[ignore]
     fn has_hook() {
-        let handle = Handle::current();
+        let handle = Handle::default();
 
         let ctx = RvCtx::new().unwrap();
         let tp = TransportBuilder::new(ctx.clone()).create().unwrap();

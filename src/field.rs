@@ -4,6 +4,8 @@
 //! and encapsulated in a "message field", represented here by
 //! the `MsgField` type.
 
+#![allow(clippy::float_cmp)]
+
 use chrono::NaiveDateTime;
 use errors::*;
 use message::{BorrowedMsg, Msg};
@@ -47,7 +49,7 @@ pub enum DecodedField<'a> {
 
 impl<'a> Decodable<'a> for DecodedField<'a> {
     fn tibrv_try_decode(fld: &'a MsgField) -> Result<DecodedField<'a>, TibrvError> {
-        match fld.inner.type_ as u32 {
+        match u32::from(fld.inner.type_) {
             TIBRVMSG_STRING => fld.try_decode().map(DecodedField::String),
             TIBRVMSG_MSG => fld.try_decode().map(DecodedField::Message),
             TIBRVMSG_U8 => fld.try_decode().map(DecodedField::U8),
@@ -210,7 +212,7 @@ pub trait Decodable<'a> {
         Self: Sized;
 }
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 macro_rules! must_name {
     ($name:ident, $id:ident) => (
         if $id.is_some() {
@@ -219,7 +221,7 @@ macro_rules! must_name {
     )
 }
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 macro_rules! encodable {
     ($base_type:ty, $tibrv_type:tt, $local:ident, $tibrv_flag:expr) => (
         impl Encodable for $base_type {
@@ -256,7 +258,7 @@ macro_rules! encodable {
     )
 }
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 macro_rules! array_encodable {
     ($base_type:ty, $tibrv_flag:expr) => (
         impl<'a> Encodable for &'a [$base_type] {
@@ -475,7 +477,7 @@ pub unsafe fn tibrv_try_decode_opaque<T: Copy>(
 mod tests {
     use super::*;
 
-    #[cfg_attr(rustfmt, rustfmt_skip)]
+    #[rustfmt::skip]
     macro_rules! test_encodable_array {
         ($rt:ty, $df:tt, $bs:expr, $val1:expr, $val2:expr, $val3:expr, $val4:expr) => (
             {
@@ -642,7 +644,7 @@ mod tests {
     #[test]
     fn test_datetime_roundtrip() {
         use chrono::prelude::*;
-        let dt = NaiveDate::from_ymd(2017, 01, 01).and_hms_milli(0, 0, 0, 0);
+        let dt = NaiveDate::from_ymd(2017, 1, 1).and_hms_milli(0, 0, 0, 0);
         let tibdate = dt.tibrv_encode(Some("Date"), None);
         assert_eq!(dt, NaiveDateTime::tibrv_try_decode(&tibdate).unwrap());
     }

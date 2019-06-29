@@ -191,14 +191,13 @@ impl Transport {
     ///
     /// The created subject name will be unique for this transport.
     pub fn create_inbox(&self) -> Result<String, TibrvError> {
-        let mut buf: Vec<::std::os::raw::c_char> = Vec::with_capacity(128);
-        buf.resize(128, 0);
+        let mut buf: Vec<::std::os::raw::c_char> = vec![0; 128];
         unsafe {
             tibrvTransport_CreateInbox(self.inner, buf.as_mut_ptr(), 128).map(|_| {
                 CString::from_vec_unchecked(buf.into_iter().map(|c| c as u8).collect())
                     .into_string()
                     .expect("C String from CreateInbox contained invalid data")
-                    .trim_right_matches('\0')
+                    .trim_end_matches('\0')
                     .to_owned()
             })
         }
@@ -359,7 +358,7 @@ mod tests {
     #[test]
     fn version() {
         let ctx = RvCtx::new().unwrap();
-        assert!(ctx.version().len() > 0);
+        assert!(!ctx.version().is_empty());
     }
 
     #[test]
@@ -375,7 +374,7 @@ mod tests {
         let ctx = RvCtx::new().unwrap();
         let tp = TransportBuilder::new(ctx).create().unwrap();
         let inbox = tp.create_inbox().unwrap();
-        assert!(inbox.len() > 0);
+        assert!(!inbox.is_empty());
         assert!(inbox.contains("INBOX"));
         println!("{:?}", inbox);
     }

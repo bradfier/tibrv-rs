@@ -12,9 +12,10 @@ include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 impl From<bool> for tibrv_bool {
     fn from(boolean: bool) -> Self {
-        match boolean {
-            true => tibrv_bool::TIBRV_TRUE,
-            false => tibrv_bool::TIBRV_FALSE,
+        if boolean {
+            tibrv_bool::TIBRV_TRUE
+        } else {
+            tibrv_bool::TIBRV_FALSE
         }
     }
 }

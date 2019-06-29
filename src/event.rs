@@ -13,16 +13,14 @@ unsafe extern "C" fn sync_callback(
     _event: tibrvEvent,
     message: tibrvMsg,
     closure: *mut ::std::os::raw::c_void,
-) -> () {
+) {
     // If anything goes wrong in this callback, we have no
     // way to indicate that to Rendezvous without causing an abort.
     // Instead we catch any recoverable unwind.
     let _ = ::std::panic::catch_unwind(move || {
-        let sender: Box<mpsc::Sender<Msg>> =
-            Box::from_raw(closure as *mut mpsc::Sender<Msg>);
+        let sender = closure as *mut mpsc::Sender<Msg>;
         let msg = BorrowedMsg { inner: message };
-        sender.send(msg.detach().unwrap()).unwrap();
-        ::std::mem::forget(sender); // Don't run Drop on the channel
+        (&*sender).send(msg.detach().unwrap()).unwrap();
     });
 }
 
