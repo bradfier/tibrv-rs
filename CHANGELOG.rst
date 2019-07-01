@@ -7,12 +7,6 @@ documented in this file.
 
 This project adheres to `Semantic Versioning <https://semver.org/>`_.
 
-Upcoming Changes
-----------------
-
-* Rendezvous Request / Reply
-* Rendezvous Distributed Queues
-
 `0.5.0`_ (2019-07-01)
 ---------------------
 
