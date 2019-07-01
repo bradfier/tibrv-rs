@@ -32,6 +32,31 @@ Breaking Changes
 * Async `Stream` and `Sink` use `TibrvError` to indicate fault conditions rather
   than a blanket `io::Error`.
 
+`0.5.0`_ (2019-07-01)
+---------------------
+
+New Features
+~~~~~~~~~~~~
+
+* Rendezvous Request / Response (with Async support)
+
+  See `async_client.rs <https://github.com/bradfier/tibrv-rs/blob/master/examples/async_client.rs>`_
+  and `async_server.rs <https://github.com/bradfier/tibrv-rs/blob/master/examples/async_server.rs>`_
+  for usage examples.
+
+Bug Fixes
+~~~~~~~~~
+
+* A number of lifetime issues have been cleaned up in `Msg` and `MsgField`
+  thanks to @pfernie
+* Async queues no longer leak two words every time they are dropped.
+
+Breaking Changes
+~~~~~~~~~~~~~~~~
+
+* Async `Stream` and `Sink` use `TibrvError` to indicate fault conditions rather
+  than a blanket `io::Error`.
+
 `0.4.0`_ (2018-07-18)
 ---------------------
 
