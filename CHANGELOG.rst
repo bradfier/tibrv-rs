@@ -13,6 +13,31 @@ Upcoming Changes
 * Rendezvous Request / Reply
 * Rendezvous Distributed Queues
 
+`0.5.0`_ (2019-07-01)
+---------------------
+
+New Features
+~~~~~~~~~~~~
+
+* Rendezvous Request / Response (with Async support)
+
+  See `async_client.rs <https://github.com/bradfier/tibrv-rs/blob/master/examples/async_client.rs>`_
+  and `async_server.rs <https://github.com/bradfier/tibrv-rs/blob/master/examples/async_server.rs>`_
+  for usage examples.
+
+Bug Fixes
+~~~~~~~~~
+
+* A number of lifetime issues have been cleaned up in `Msg` and `MsgField`
+  thanks to @pfernie
+* Async queues no longer leak two words every time they are dropped.
+
+Breaking Changes
+~~~~~~~~~~~~~~~~
+
+* Async `Stream` and `Sink` use `TibrvError` to indicate fault conditions rather
+  than a blanket `io::Error`.
+
 `0.4.0`_ (2018-07-18)
 ---------------------
 
@@ -59,6 +84,7 @@ Initial public release.
 * First usable release on `crates.io <https://crates.io/crates/tibrv>`_.
 
 
+.. _`0.5.0`: https://github.com/bradfier/tibrv-rs/compare/v0.4.0...v0.5.0
 .. _`0.4.0`: https://github.com/bradfier/tibrv-rs/compare/v0.3.0...v0.4.0
 .. _`0.3.0`: https://github.com/bradfier/tibrv-rs/compare/v0.2.0...v0.3.0
 .. _`0.2.0`: https://github.com/bradfier/tibrv-rs/compare/v0.1.1...v0.2.0
