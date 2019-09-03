@@ -38,7 +38,7 @@ tasks:
           cargo doc --all-features
           echo '<meta http-equiv=refresh content=0;url=tibrv/index.html>' > target/doc/index.html
           ghp-import -n target/doc
-          git push ssh://git@github.com/bradfier/tibrv-rs.git gh-pages
+          git push --force ssh://git@github.com/bradfier/tibrv-rs.git gh-pages
         else
           echo "Not on master, skipping..."
         fi
