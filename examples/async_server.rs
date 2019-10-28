@@ -4,7 +4,6 @@ extern crate tokio;
 
 use tibrv::context::{RvCtx, TransportBuilder};
 
-use futures::prelude::Stream;
 use std::ffi::CString;
 use tibrv::field::Builder;
 use tokio::prelude::*;
@@ -15,7 +14,7 @@ use tokio::reactor::Handle;
 /// then forward some response (in this case just echoing the message)
 /// back via a `Sink`, implemented by the `Transport`.
 fn main() {
-    let handle = Handle::current(); // Get a handle to the current reactor
+    let handle = Handle::default(); // Get a handle to the default reactor
     let ctx = RvCtx::new().expect("Couldn't start tibrv context");
     let tp = TransportBuilder::new(ctx.clone())
         .create()

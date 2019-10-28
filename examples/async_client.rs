@@ -12,7 +12,7 @@ use tokio::prelude::*;
 use tokio::reactor::Handle;
 
 fn main() {
-    let handle = Handle::current();
+    let handle = Handle::default();
     let ctx = RvCtx::new().unwrap(); // Create the context, starting Rendezvous internals
     let tp = TransportBuilder::new(ctx.clone())
         .create()
