@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `/home/build/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-udp-0.1.3/src/recv_dgram.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>recv_dgram.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../tokio_udp/index.html'><img src='../../rust-logo.png' alt='logo' width='100'></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `/home/build/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-udp-0.1.5/src/recv_dgram.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>recv_dgram.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../tokio_udp/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -99,6 +99,13 @@
 <span id="99"> 99</span>
 <span id="100">100</span>
 <span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">super</span>::<span class="ident">socket</span>::<span class="ident">UdpSocket</span>;
 
@@ -114,7 +121,7 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RecvDgram</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
     <span class="doccomment">/// None means future was completed</span>
-    <span class="ident">state</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">RecvDgramInner</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>
+    <span class="ident">state</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">RecvDgramInner</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>,
 }
 
 <span class="doccomment">/// A struct is used to represent the full info of RecvDgram.</span>
@@ -123,7 +130,7 @@
     <span class="doccomment">/// Rx socket</span>
     <span class="ident">socket</span>: <span class="ident">UdpSocket</span>,
     <span class="doccomment">/// The received data will be put in the buffer</span>
-    <span class="ident">buffer</span>: <span class="ident">T</span>
+    <span class="ident">buffer</span>: <span class="ident">T</span>,
 }
 
 <span class="doccomment">/// Components of a `RecvDgram` future, returned from `into_parts`.</span>
@@ -134,13 +141,16 @@
     <span class="doccomment">/// The buffer</span>
     <span class="kw">pub</span> <span class="ident">buffer</span>: <span class="ident">T</span>,
 
-    <span class="ident">_priv</span>: ()
+    <span class="ident">_priv</span>: (),
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="ident">RecvDgram</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Create a new future to receive UDP Datagram</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">socket</span>: <span class="ident">UdpSocket</span>, <span class="ident">buffer</span>: <span class="ident">T</span>) <span class="op">-&gt;</span> <span class="ident">RecvDgram</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">inner</span> <span class="op">=</span> <span class="ident">RecvDgramInner</span> { <span class="ident">socket</span>: <span class="ident">socket</span>, <span class="ident">buffer</span>: <span class="ident">buffer</span> };
+        <span class="kw">let</span> <span class="ident">inner</span> <span class="op">=</span> <span class="ident">RecvDgramInner</span> {
+            <span class="ident">socket</span>: <span class="ident">socket</span>,
+            <span class="ident">buffer</span>: <span class="ident">buffer</span>,
+        };
         <span class="ident">RecvDgram</span> { <span class="ident">state</span>: <span class="prelude-val">Some</span>(<span class="ident">inner</span>) }
     }
 
@@ -171,28 +181,32 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// If called after the future has completed.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_parts</span>(<span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Parts</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">state</span>
+        <span class="kw">let</span> <span class="ident">state</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">state</span>
             .<span class="ident">take</span>()
             .<span class="ident">expect</span>(<span class="string">&quot;into_parts called after completion&quot;</span>);
 
         <span class="ident">Parts</span> {
             <span class="ident">socket</span>: <span class="ident">state</span>.<span class="ident">socket</span>,
             <span class="ident">buffer</span>: <span class="ident">state</span>.<span class="ident">buffer</span>,
-            <span class="ident">_priv</span>: ()
+            <span class="ident">_priv</span>: (),
         }
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="ident">Future</span> <span class="kw">for</span> <span class="ident">RecvDgram</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
-    <span class="kw">where</span> <span class="ident">T</span>: <span class="ident">AsMut</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>,
+<span class="kw">where</span>
+    <span class="ident">T</span>: <span class="ident">AsMut</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>,
 {
     <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> (<span class="ident">UdpSocket</span>, <span class="ident">T</span>, <span class="ident">usize</span>, <span class="ident">SocketAddr</span>);
     <span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> <span class="ident">io</span>::<span class="ident">Error</span>;
 
     <span class="kw">fn</span> <span class="ident">poll</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Poll</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Item</span>, <span class="ident">io</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">n</span>, <span class="ident">addr</span>) <span class="op">=</span> {
-            <span class="kw">let</span> <span class="kw-2">ref</span> <span class="kw-2">mut</span> <span class="ident">inner</span> <span class="op">=</span>
-                <span class="self">self</span>.<span class="ident">state</span>.<span class="ident">as_mut</span>().<span class="ident">expect</span>(<span class="string">&quot;RecvDgram polled after completion&quot;</span>);
+            <span class="kw">let</span> <span class="kw-2">ref</span> <span class="kw-2">mut</span> <span class="ident">inner</span> <span class="op">=</span> <span class="self">self</span>
+                .<span class="ident">state</span>
+                .<span class="ident">as_mut</span>()
+                .<span class="ident">expect</span>(<span class="string">&quot;RecvDgram polled after completion&quot;</span>);
 
             <span class="macro">try_ready</span><span class="macro">!</span>(<span class="ident">inner</span>.<span class="ident">socket</span>.<span class="ident">poll_recv_from</span>(<span class="ident">inner</span>.<span class="ident">buffer</span>.<span class="ident">as_mut</span>()))
         };
