@@ -6,5 +6,4 @@ implementors["tibrv"] = [];
             } else {
                 window.pending_implementors = implementors;
             }
-        
-})()
+        })()

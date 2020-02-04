@@ -6,5 +6,4 @@ implementors["net2"] = [];
             } else {
                 window.pending_implementors = implementors;
             }
-        
-})()
+        })()

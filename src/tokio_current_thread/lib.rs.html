@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `/home/build/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-current-thread-0.1.6/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../tokio_current_thread/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `/home/build/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-current-thread-0.1.6/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../tokio_current_thread/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -931,7 +931,7 @@
     <span class="ident">spawn_handle</span>: <span class="ident">Handle</span>,
 
     <span class="doccomment">/// Receiver for futures spawned from other threads</span>
-    <span class="ident">spawn_receiver</span>: <span class="ident">mpsc</span>::<span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;&gt;</span>,
+    <span class="ident">spawn_receiver</span>: <span class="ident">mpsc</span>::<span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 
     <span class="doccomment">/// The thread-local ID assigned to this executor.</span>
     <span class="ident">id</span>: <span class="ident">u64</span>,
@@ -947,7 +947,7 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TaskExecutor</span> {
     <span class="comment">// Prevent the handle from moving across threads.</span>
-    <span class="ident">_p</span>: ::<span class="ident">std</span>::<span class="ident">marker</span>::<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">Rc</span><span class="op">&lt;</span>()<span class="op">&gt;&gt;</span>,
+    <span class="ident">_p</span>: ::<span class="ident">std</span>::<span class="ident">marker</span>::<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">Rc</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// Returned by the `turn` function.</span>
@@ -958,7 +958,7 @@
 
 <span class="kw">impl</span> <span class="ident">Turn</span> {
     <span class="doccomment">/// `true` if any futures were polled at all and `false` otherwise.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">has_polled</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">has_polled</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">polled</span>
     }
 }
@@ -976,13 +976,13 @@
 }
 
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">RunError</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="macro">write</span><span class="macro">!</span>(<span class="ident">fmt</span>, <span class="string">&quot;{}&quot;</span>, <span class="self">self</span>.<span class="ident">description</span>())
     }
 }
 
 <span class="kw">impl</span> <span class="ident">Error</span> <span class="kw">for</span> <span class="ident">RunError</span> {
-    <span class="kw">fn</span> <span class="ident">description</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="ident">str</span> {
+    <span class="kw">fn</span> <span class="ident">description</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">str</span> {
         <span class="string">&quot;Run error&quot;</span>
     }
 }
@@ -994,13 +994,13 @@
 }
 
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">RunTimeoutError</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="macro">write</span><span class="macro">!</span>(<span class="ident">fmt</span>, <span class="string">&quot;{}&quot;</span>, <span class="self">self</span>.<span class="ident">description</span>())
     }
 }
 
 <span class="kw">impl</span> <span class="ident">Error</span> <span class="kw">for</span> <span class="ident">RunTimeoutError</span> {
-    <span class="kw">fn</span> <span class="ident">description</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="ident">str</span> {
+    <span class="kw">fn</span> <span class="ident">description</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">str</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">timeout</span> {
             <span class="string">&quot;Run timeout error (timeout)&quot;</span>
         } <span class="kw">else</span> {
@@ -1016,13 +1016,13 @@
 }
 
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">TurnError</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="macro">write</span><span class="macro">!</span>(<span class="ident">fmt</span>, <span class="string">&quot;{}&quot;</span>, <span class="self">self</span>.<span class="ident">description</span>())
     }
 }
 
 <span class="kw">impl</span> <span class="ident">Error</span> <span class="kw">for</span> <span class="ident">TurnError</span> {
-    <span class="kw">fn</span> <span class="ident">description</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="ident">str</span> {
+    <span class="kw">fn</span> <span class="ident">description</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">str</span> {
         <span class="string">&quot;Turn error&quot;</span>
     }
 }
@@ -1034,13 +1034,13 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">BlockError</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="macro">write</span><span class="macro">!</span>(<span class="ident">fmt</span>, <span class="string">&quot;Block error&quot;</span>)
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">fmt</span>::<span class="ident">Debug</span><span class="op">&gt;</span> <span class="ident">Error</span> <span class="kw">for</span> <span class="ident">BlockError</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">description</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="ident">str</span> {
+    <span class="kw">fn</span> <span class="ident">description</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">str</span> {
         <span class="string">&quot;Block error&quot;</span>
     }
 }
@@ -1053,12 +1053,12 @@
 }
 
 <span class="kw">trait</span> <span class="ident">SpawnLocal</span> {
-    <span class="kw">fn</span> <span class="ident">spawn_local</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">future</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;&gt;</span>, <span class="ident">already_counted</span>: <span class="ident">bool</span>);
+    <span class="kw">fn</span> <span class="ident">spawn_local</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">future</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">already_counted</span>: <span class="ident">bool</span>);
 }
 
 <span class="kw">struct</span> <span class="ident">CurrentRunner</span> {
-    <span class="ident">spawn</span>: <span class="ident">Cell</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">SpawnLocal</span><span class="op">&gt;&gt;</span>,
-    <span class="ident">id</span>: <span class="ident">Cell</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;&gt;</span>,
+    <span class="ident">spawn</span>: <span class="ident">Cell</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">SpawnLocal</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">id</span>: <span class="ident">Cell</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="macro">thread_local</span><span class="macro">!</span> {
@@ -1092,7 +1092,7 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// [`CurrentThread`]: struct.CurrentThread.html</span>
 <span class="doccomment">/// [mod]: index.html</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">block_on_all</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">future</span>: <span class="ident">F</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">F</span>::<span class="ident">Item</span>, <span class="ident">F</span>::<span class="ident">Error</span><span class="op">&gt;</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">block_on_all</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">future</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">F</span>::<span class="ident">Item</span>, <span class="ident">F</span>::<span class="ident">Error</span><span class="op">&gt;</span>
 <span class="kw">where</span>
     <span class="ident">F</span>: <span class="ident">Future</span>,
 {
@@ -1130,7 +1130,7 @@
 
 <span class="kw">impl</span> <span class="ident">CurrentThread</span><span class="op">&lt;</span><span class="ident">ParkThread</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Create a new instance of `CurrentThread`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">CurrentThread</span>::<span class="ident">new_with_park</span>(<span class="ident">ParkThread</span>::<span class="ident">new</span>())
     }
 }
@@ -1138,7 +1138,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">P</span>: <span class="ident">Park</span><span class="op">&gt;</span> <span class="ident">CurrentThread</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Create a new instance of `CurrentThread` backed by the given park</span>
     <span class="doccomment">/// handle.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_with_park</span>(<span class="ident">park</span>: <span class="ident">P</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_with_park</span>(<span class="ident">park</span>: <span class="ident">P</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">unpark</span> <span class="op">=</span> <span class="ident">park</span>.<span class="ident">unpark</span>();
 
         <span class="kw">let</span> (<span class="ident">spawn_sender</span>, <span class="ident">spawn_receiver</span>) <span class="op">=</span> <span class="ident">mpsc</span>::<span class="ident">channel</span>();
@@ -1177,14 +1177,14 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// Note that this method is inherently racy -- if a future is spawned from a remote `Handle`,</span>
     <span class="doccomment">/// this method may return `true` even though there are more futures to be executed.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_idle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">num_futures</span>.<span class="ident">load</span>(<span class="ident">atomic</span>::<span class="ident">Ordering</span>::<span class="ident">SeqCst</span>) <span class="op">&lt;=</span> <span class="number">1</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_idle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+        <span class="self">self</span>.<span class="ident">num_futures</span>.<span class="ident">load</span>(<span class="ident">atomic</span>::<span class="ident">Ordering</span>::<span class="ident">SeqCst</span>) <span class="op">&lt;</span><span class="op">=</span> <span class="number">1</span>
     }
 
     <span class="doccomment">/// Spawn the future on the executor.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// This internally queues the future to be executed once `run` is called.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">spawn</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">future</span>: <span class="ident">F</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">spawn</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">future</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     {
@@ -1205,7 +1205,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// The caller is responsible for ensuring that other spawned futures</span>
     <span class="doccomment">/// complete execution.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">block_on</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">future</span>: <span class="ident">F</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">F</span>::<span class="ident">Item</span>, <span class="ident">BlockError</span><span class="op">&lt;</span><span class="ident">F</span>::<span class="ident">Error</span><span class="op">&gt;&gt;</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">block_on</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">future</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">F</span>::<span class="ident">Item</span>, <span class="ident">BlockError</span><span class="op">&lt;</span><span class="ident">F</span>::<span class="ident">Error</span><span class="op">&gt;</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">F</span>: <span class="ident">Future</span>,
     {
@@ -1215,14 +1215,14 @@
 
     <span class="doccomment">/// Run the executor to completion, blocking the thread until **all**</span>
     <span class="doccomment">/// spawned futures have completed.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">RunError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">RunError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">enter</span> <span class="op">=</span> <span class="ident">tokio_executor</span>::<span class="ident">enter</span>().<span class="ident">expect</span>(<span class="string">&quot;failed to start `current_thread::Runtime`&quot;</span>);
         <span class="self">self</span>.<span class="ident">enter</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">enter</span>).<span class="ident">run</span>()
     }
 
     <span class="doccomment">/// Run the executor to completion, blocking the thread until all</span>
     <span class="doccomment">/// spawned futures have completed **or** `duration` time has elapsed.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run_timeout</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">duration</span>: <span class="ident">Duration</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">RunTimeoutError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run_timeout</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">duration</span>: <span class="ident">Duration</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">RunTimeoutError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">enter</span> <span class="op">=</span> <span class="ident">tokio_executor</span>::<span class="ident">enter</span>().<span class="ident">expect</span>(<span class="string">&quot;failed to start `current_thread::Runtime`&quot;</span>);
         <span class="self">self</span>.<span class="ident">enter</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">enter</span>).<span class="ident">run_timeout</span>(<span class="ident">duration</span>)
     }
@@ -1230,13 +1230,13 @@
     <span class="doccomment">/// Perform a single iteration of the event loop.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// This function blocks the current thread even if the executor is idle.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">turn</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">duration</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Turn</span>, <span class="ident">TurnError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">turn</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">duration</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Turn</span>, <span class="ident">TurnError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">enter</span> <span class="op">=</span> <span class="ident">tokio_executor</span>::<span class="ident">enter</span>().<span class="ident">expect</span>(<span class="string">&quot;failed to start `current_thread::Runtime`&quot;</span>);
         <span class="self">self</span>.<span class="ident">enter</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">enter</span>).<span class="ident">turn</span>(<span class="ident">duration</span>)
     }
 
     <span class="doccomment">/// Bind `CurrentThread` instance with an execution context.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">enter</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">enter</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="kw-2">mut</span> <span class="ident">Enter</span>) <span class="op">-&gt;</span> <span class="ident">Entered</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">P</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">enter</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">enter</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="kw-2">mut</span> <span class="ident">Enter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Entered</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">P</span><span class="op">&gt;</span> {
         <span class="ident">Entered</span> {
             <span class="ident">executor</span>: <span class="self">self</span>,
             <span class="ident">enter</span>,
@@ -1244,16 +1244,16 @@
     }
 
     <span class="doccomment">/// Returns a reference to the underlying `Park` instance.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_park</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="ident">P</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_park</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">P</span> {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">park</span>
     }
 
     <span class="doccomment">/// Returns a mutable reference to the underlying `Park` instance.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_park_mut</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">P</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_park_mut</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">P</span> {
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">park</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">borrow</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">P</span>::<span class="ident">Unpark</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">borrow</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">P</span>::<span class="ident">Unpark</span><span class="op">&gt;</span> {
         <span class="ident">Borrow</span> {
             <span class="ident">id</span>: <span class="self">self</span>.<span class="ident">id</span>,
             <span class="ident">scheduler</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">scheduler</span>,
@@ -1265,7 +1265,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// Different to the executor itself, the handle can be sent to different</span>
     <span class="doccomment">/// threads and can be used to spawn futures on the executor.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">handle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Handle</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">handle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Handle</span> {
         <span class="self">self</span>.<span class="ident">spawn_handle</span>.<span class="ident">clone</span>()
     }
 }
@@ -1292,7 +1292,7 @@
     <span class="kw">fn</span> <span class="ident">spawn</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">future</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span>,
-    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">SpawnError</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">SpawnError</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">borrow</span>().<span class="ident">spawn_local</span>(<span class="ident">future</span>, <span class="bool-val">false</span>);
         <span class="prelude-val">Ok</span>(())
     }
@@ -1302,14 +1302,14 @@
 <span class="kw">where</span>
     <span class="ident">T</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
-    <span class="kw">fn</span> <span class="ident">spawn</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">future</span>: <span class="ident">T</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">SpawnError</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">spawn</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">future</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">SpawnError</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">borrow</span>().<span class="ident">spawn_local</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">future</span>), <span class="bool-val">false</span>);
         <span class="prelude-val">Ok</span>(())
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">P</span>: <span class="ident">Park</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">CurrentThread</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="ident">fmt</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;CurrentThread&quot;</span>)
             .<span class="ident">field</span>(<span class="string">&quot;scheduler&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">scheduler</span>)
             .<span class="ident">field</span>(
@@ -1326,7 +1326,7 @@
     <span class="doccomment">/// Spawn the future on the executor.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// This internally queues the future to be executed once `run` is called.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">spawn</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">future</span>: <span class="ident">F</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">spawn</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">future</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     {
@@ -1347,7 +1347,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// The caller is responsible for ensuring that other spawned futures</span>
     <span class="doccomment">/// complete execution.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">block_on</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">future</span>: <span class="ident">F</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">F</span>::<span class="ident">Item</span>, <span class="ident">BlockError</span><span class="op">&lt;</span><span class="ident">F</span>::<span class="ident">Error</span><span class="op">&gt;&gt;</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">block_on</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">future</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">F</span>::<span class="ident">Item</span>, <span class="ident">BlockError</span><span class="op">&lt;</span><span class="ident">F</span>::<span class="ident">Error</span><span class="op">&gt;</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">F</span>: <span class="ident">Future</span>,
     {
@@ -1358,12 +1358,12 @@
             <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="self">self</span>
                 .<span class="ident">executor</span>
                 .<span class="ident">borrow</span>()
-                .<span class="ident">enter</span>(<span class="self">self</span>.<span class="ident">enter</span>, <span class="op">||</span> <span class="ident">future</span>.<span class="ident">poll_future_notify</span>(<span class="kw-2">&amp;</span><span class="ident">notify</span>, <span class="number">0</span>));
+                .<span class="ident">enter</span>(<span class="self">self</span>.<span class="ident">enter</span>, <span class="op">|</span><span class="op">|</span> <span class="ident">future</span>.<span class="ident">poll_future_notify</span>(<span class="kw-2">&amp;</span><span class="ident">notify</span>, <span class="number">0</span>));
 
             <span class="kw">match</span> <span class="ident">res</span> {
-                <span class="prelude-val">Ok</span>(<span class="ident">Async</span>::<span class="ident">Ready</span>(<span class="ident">e</span>)) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">e</span>),
-                <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">BlockError</span> { <span class="ident">inner</span>: <span class="prelude-val">Some</span>(<span class="ident">e</span>) }),
-                <span class="prelude-val">Ok</span>(<span class="ident">Async</span>::<span class="ident">NotReady</span>) <span class="op">=&gt;</span> {}
+                <span class="prelude-val">Ok</span>(<span class="ident">Async</span>::<span class="ident">Ready</span>(<span class="ident">e</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">e</span>),
+                <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">BlockError</span> { <span class="ident">inner</span>: <span class="prelude-val">Some</span>(<span class="ident">e</span>) }),
+                <span class="prelude-val">Ok</span>(<span class="ident">Async</span>::<span class="ident">NotReady</span>) <span class="op">=</span><span class="op">&gt;</span> {}
             }
 
             <span class="self">self</span>.<span class="ident">tick</span>();
@@ -1376,26 +1376,26 @@
 
     <span class="doccomment">/// Run the executor to completion, blocking the thread until **all**</span>
     <span class="doccomment">/// spawned futures have completed.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">RunError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">RunError</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">run_timeout2</span>(<span class="prelude-val">None</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">RunError</span> { <span class="ident">_p</span>: () })
     }
 
     <span class="doccomment">/// Run the executor to completion, blocking the thread until all</span>
     <span class="doccomment">/// spawned futures have completed **or** `duration` time has elapsed.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run_timeout</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">duration</span>: <span class="ident">Duration</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">RunTimeoutError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run_timeout</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">duration</span>: <span class="ident">Duration</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">RunTimeoutError</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">run_timeout2</span>(<span class="prelude-val">Some</span>(<span class="ident">duration</span>))
     }
 
     <span class="doccomment">/// Perform a single iteration of the event loop.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// This function blocks the current thread even if the executor is idle.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">turn</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">duration</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Turn</span>, <span class="ident">TurnError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">turn</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">duration</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Turn</span>, <span class="ident">TurnError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">executor</span>.<span class="ident">scheduler</span>.<span class="ident">has_pending_futures</span>() {
             <span class="self">self</span>.<span class="ident">executor</span>.<span class="ident">park</span>.<span class="ident">park_timeout</span>(<span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">0</span>))
         } <span class="kw">else</span> {
             <span class="kw">match</span> <span class="ident">duration</span> {
-                <span class="prelude-val">Some</span>(<span class="ident">duration</span>) <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">executor</span>.<span class="ident">park</span>.<span class="ident">park_timeout</span>(<span class="ident">duration</span>),
-                <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">executor</span>.<span class="ident">park</span>.<span class="ident">park</span>(),
+                <span class="prelude-val">Some</span>(<span class="ident">duration</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">executor</span>.<span class="ident">park</span>.<span class="ident">park_timeout</span>(<span class="ident">duration</span>),
+                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">executor</span>.<span class="ident">park</span>.<span class="ident">park</span>(),
             }
         };
 
@@ -1409,16 +1409,16 @@
     }
 
     <span class="doccomment">/// Returns a reference to the underlying `Park` instance.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_park</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="ident">P</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_park</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">P</span> {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">executor</span>.<span class="ident">park</span>
     }
 
     <span class="doccomment">/// Returns a mutable reference to the underlying `Park` instance.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_park_mut</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">P</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_park_mut</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">P</span> {
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">executor</span>.<span class="ident">park</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">run_timeout2</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">dur</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">RunTimeoutError</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">run_timeout2</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">dur</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">RunTimeoutError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">executor</span>.<span class="ident">is_idle</span>() {
             <span class="comment">// Nothing to do</span>
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
@@ -1434,20 +1434,20 @@
             }
 
             <span class="kw">match</span> <span class="ident">time</span> {
-                <span class="prelude-val">Some</span>((<span class="ident">until</span>, <span class="ident">rem</span>)) <span class="op">=&gt;</span> {
+                <span class="prelude-val">Some</span>((<span class="ident">until</span>, <span class="ident">rem</span>)) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">executor</span>.<span class="ident">park</span>.<span class="ident">park_timeout</span>(<span class="ident">rem</span>) {
                         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">RunTimeoutError</span>::<span class="ident">new</span>(<span class="bool-val">false</span>));
                     }
 
                     <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">Instant</span>::<span class="ident">now</span>();
 
-                    <span class="kw">if</span> <span class="ident">now</span> <span class="op">&gt;=</span> <span class="ident">until</span> {
+                    <span class="kw">if</span> <span class="ident">now</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">until</span> {
                         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">RunTimeoutError</span>::<span class="ident">new</span>(<span class="bool-val">true</span>));
                     }
 
                     <span class="ident">time</span> <span class="op">=</span> <span class="prelude-val">Some</span>((<span class="ident">until</span>, <span class="ident">until</span> <span class="op">-</span> <span class="ident">now</span>));
                 }
-                <span class="prelude-val">None</span> <span class="op">=&gt;</span> {
+                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">executor</span>.<span class="ident">park</span>.<span class="ident">park</span>() {
                         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">RunTimeoutError</span>::<span class="ident">new</span>(<span class="bool-val">false</span>));
                     }
@@ -1457,7 +1457,7 @@
     }
 
     <span class="doccomment">/// Returns `true` if any futures were processed</span>
-    <span class="kw">fn</span> <span class="ident">tick</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">tick</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
         <span class="comment">// Spawn any futures that were spawned from other threads by manually</span>
         <span class="comment">// looping over the receiver stream</span>
 
@@ -1483,7 +1483,7 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">P</span>: <span class="ident">Park</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">Entered</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">P</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="ident">fmt</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;Entered&quot;</span>)
             .<span class="ident">field</span>(<span class="string">&quot;executor&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">executor</span>)
             .<span class="ident">field</span>(<span class="string">&quot;enter&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">enter</span>)
@@ -1496,7 +1496,7 @@
 <span class="doccomment">/// Handle to spawn a future on the corresponding `CurrentThread` instance</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Handle</span> {
-    <span class="ident">sender</span>: <span class="ident">mpsc</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;&gt;</span>,
+    <span class="ident">sender</span>: <span class="ident">mpsc</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="ident">num_futures</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">atomic</span>::<span class="ident">AtomicUsize</span><span class="op">&gt;</span>,
     <span class="ident">shut_down</span>: <span class="ident">Cell</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>,
     <span class="ident">notify</span>: <span class="ident">executor</span>::<span class="ident">NotifyHandle</span>,
@@ -1508,7 +1508,7 @@
 
 <span class="comment">// Manual implementation because the Sender does not implement Debug</span>
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">Handle</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="ident">fmt</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;Handle&quot;</span>)
             .<span class="ident">field</span>(<span class="string">&quot;shut_down&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">shut_down</span>.<span class="ident">get</span>())
             .<span class="ident">finish</span>()
@@ -1522,13 +1522,13 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// This function panics if the spawn fails. Failure occurs if the `CurrentThread`</span>
     <span class="doccomment">/// instance of the `Handle` does not exist anymore.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">spawn</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">future</span>: <span class="ident">F</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">SpawnError</span><span class="op">&gt;</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">spawn</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">future</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">SpawnError</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     {
-        <span class="kw">if</span> <span class="ident">thread</span>::<span class="ident">current</span>().<span class="ident">id</span>() <span class="op">==</span> <span class="self">self</span>.<span class="ident">thread</span> {
+        <span class="kw">if</span> <span class="ident">thread</span>::<span class="ident">current</span>().<span class="ident">id</span>() <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">thread</span> {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">e</span> <span class="op">=</span> <span class="ident">TaskExecutor</span>::<span class="ident">current</span>();
-            <span class="kw">if</span> <span class="ident">e</span>.<span class="ident">id</span>() <span class="op">==</span> <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">id</span>) {
+            <span class="kw">if</span> <span class="ident">e</span>.<span class="ident">id</span>() <span class="op">=</span><span class="op">=</span> <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">id</span>) {
                 <span class="kw">return</span> <span class="ident">e</span>.<span class="ident">spawn_local</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">future</span>));
             }
         }
@@ -1539,7 +1539,7 @@
 
         <span class="comment">// NOTE: += 2 since LSB is the shutdown bit</span>
         <span class="kw">let</span> <span class="ident">pending</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">num_futures</span>.<span class="ident">fetch_add</span>(<span class="number">2</span>, <span class="ident">atomic</span>::<span class="ident">Ordering</span>::<span class="ident">SeqCst</span>);
-        <span class="kw">if</span> <span class="ident">pending</span> <span class="op">%</span> <span class="number">2</span> <span class="op">==</span> <span class="number">1</span> {
+        <span class="kw">if</span> <span class="ident">pending</span> <span class="op">%</span> <span class="number">2</span> <span class="op">=</span><span class="op">=</span> <span class="number">1</span> {
             <span class="comment">// Bring the count back so we still know when the Runtime is idle.</span>
             <span class="self">self</span>.<span class="ident">num_futures</span>.<span class="ident">fetch_sub</span>(<span class="number">2</span>, <span class="ident">atomic</span>::<span class="ident">Ordering</span>::<span class="ident">SeqCst</span>);
 
@@ -1566,7 +1566,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// This allows a caller to avoid creating the task if the call to `spawn`</span>
     <span class="doccomment">/// has a high likelihood of failing.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">status</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">SpawnError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">status</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">SpawnError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">shut_down</span>.<span class="ident">get</span>() {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">SpawnError</span>::<span class="ident">shutdown</span>());
         }
@@ -1584,28 +1584,28 @@
     <span class="doccomment">/// that it is done within the context of a call to `run`.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// For more details, see the [module level](index.html) documentation.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">current</span>() <span class="op">-&gt;</span> <span class="ident">TaskExecutor</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">current</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TaskExecutor</span> {
         <span class="ident">TaskExecutor</span> {
             <span class="ident">_p</span>: ::<span class="ident">std</span>::<span class="ident">marker</span>::<span class="ident">PhantomData</span>,
         }
     }
 
     <span class="doccomment">/// Get the current executor&#39;s thread-local ID.</span>
-    <span class="kw">fn</span> <span class="ident">id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
         <span class="ident">CURRENT</span>.<span class="ident">with</span>(<span class="op">|</span><span class="ident">current</span><span class="op">|</span> <span class="ident">current</span>.<span class="ident">id</span>.<span class="ident">get</span>())
     }
 
     <span class="doccomment">/// Spawn a future onto the current `CurrentThread` instance.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">spawn_local</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">future</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;&gt;</span>,
-    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">SpawnError</span><span class="op">&gt;</span> {
+        <span class="ident">future</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;</span><span class="op">&gt;</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">SpawnError</span><span class="op">&gt;</span> {
         <span class="ident">CURRENT</span>.<span class="ident">with</span>(<span class="op">|</span><span class="ident">current</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">current</span>.<span class="ident">spawn</span>.<span class="ident">get</span>() {
-            <span class="prelude-val">Some</span>(<span class="ident">spawn</span>) <span class="op">=&gt;</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">spawn</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">unsafe</span> { (<span class="kw-2">*</span><span class="ident">spawn</span>).<span class="ident">spawn_local</span>(<span class="ident">future</span>, <span class="bool-val">false</span>) };
                 <span class="prelude-val">Ok</span>(())
             }
-            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">SpawnError</span>::<span class="ident">shutdown</span>()),
+            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">SpawnError</span>::<span class="ident">shutdown</span>()),
         })
     }
 }
@@ -1614,7 +1614,7 @@
     <span class="kw">fn</span> <span class="ident">spawn</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">future</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span>,
-    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">SpawnError</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">SpawnError</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">spawn_local</span>(<span class="ident">future</span>)
     }
 }
@@ -1623,7 +1623,7 @@
 <span class="kw">where</span>
     <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
-    <span class="kw">fn</span> <span class="ident">spawn</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">future</span>: <span class="ident">F</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">SpawnError</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">spawn</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">future</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">SpawnError</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">spawn_local</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">future</span>))
     }
 }
@@ -1632,13 +1632,13 @@
 <span class="kw">where</span>
     <span class="ident">F</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
-    <span class="kw">fn</span> <span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">future</span>: <span class="ident">F</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExecuteError</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">future</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExecuteError</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="ident">CURRENT</span>.<span class="ident">with</span>(<span class="op">|</span><span class="ident">current</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">current</span>.<span class="ident">spawn</span>.<span class="ident">get</span>() {
-            <span class="prelude-val">Some</span>(<span class="ident">spawn</span>) <span class="op">=&gt;</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">spawn</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">unsafe</span> { (<span class="kw-2">*</span><span class="ident">spawn</span>).<span class="ident">spawn_local</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">future</span>), <span class="bool-val">false</span>) };
                 <span class="prelude-val">Ok</span>(())
             }
-            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">ExecuteError</span>::<span class="ident">new</span>(<span class="ident">ExecuteErrorKind</span>::<span class="ident">Shutdown</span>, <span class="ident">future</span>)),
+            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">ExecuteError</span>::<span class="ident">new</span>(<span class="ident">ExecuteErrorKind</span>::<span class="ident">Shutdown</span>, <span class="ident">future</span>)),
         })
     }
 }
@@ -1646,19 +1646,19 @@
 <span class="comment">// ===== impl Borrow =====</span>
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">U</span>: <span class="ident">Unpark</span><span class="op">&gt;</span> <span class="ident">Borrow</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">U</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">enter</span><span class="op">&lt;</span><span class="ident">F</span>, <span class="ident">R</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Enter</span>, <span class="ident">f</span>: <span class="ident">F</span>) <span class="op">-&gt;</span> <span class="ident">R</span>
+    <span class="kw">fn</span> <span class="ident">enter</span><span class="op">&lt;</span><span class="ident">F</span>, <span class="ident">R</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Enter</span>, <span class="ident">f</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">R</span>
     <span class="kw">where</span>
-        <span class="ident">F</span>: <span class="ident">FnOnce</span>() <span class="op">-&gt;</span> <span class="ident">R</span>,
+        <span class="ident">F</span>: <span class="ident">FnOnce</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">R</span>,
     {
         <span class="ident">CURRENT</span>.<span class="ident">with</span>(<span class="op">|</span><span class="ident">current</span><span class="op">|</span> {
             <span class="ident">current</span>.<span class="ident">id</span>.<span class="ident">set</span>(<span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">id</span>));
-            <span class="ident">current</span>.<span class="ident">set_spawn</span>(<span class="self">self</span>, <span class="op">||</span> <span class="ident">f</span>())
+            <span class="ident">current</span>.<span class="ident">set_spawn</span>(<span class="self">self</span>, <span class="op">|</span><span class="op">|</span> <span class="ident">f</span>())
         })
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">U</span>: <span class="ident">Unpark</span><span class="op">&gt;</span> <span class="ident">SpawnLocal</span> <span class="kw">for</span> <span class="ident">Borrow</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">U</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">spawn_local</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">future</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;&gt;</span>, <span class="ident">already_counted</span>: <span class="ident">bool</span>) {
+    <span class="kw">fn</span> <span class="ident">spawn_local</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">future</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (), <span class="ident">Error</span> <span class="op">=</span> ()<span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">already_counted</span>: <span class="ident">bool</span>) {
         <span class="kw">if</span> <span class="op">!</span><span class="ident">already_counted</span> {
             <span class="comment">// NOTE: we have a borrow of the Runtime, so we know that it isn&#39;t shut down.</span>
             <span class="comment">// NOTE: += 2 since LSB is the shutdown bit</span>
@@ -1671,9 +1671,9 @@
 <span class="comment">// ===== impl CurrentRunner =====</span>
 
 <span class="kw">impl</span> <span class="ident">CurrentRunner</span> {
-    <span class="kw">fn</span> <span class="ident">set_spawn</span><span class="op">&lt;</span><span class="ident">F</span>, <span class="ident">R</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">spawn</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">SpawnLocal</span>, <span class="ident">f</span>: <span class="ident">F</span>) <span class="op">-&gt;</span> <span class="ident">R</span>
+    <span class="kw">fn</span> <span class="ident">set_spawn</span><span class="op">&lt;</span><span class="ident">F</span>, <span class="ident">R</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">spawn</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">SpawnLocal</span>, <span class="ident">f</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">R</span>
     <span class="kw">where</span>
-        <span class="ident">F</span>: <span class="ident">FnOnce</span>() <span class="op">-&gt;</span> <span class="ident">R</span>,
+        <span class="ident">F</span>: <span class="ident">FnOnce</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">R</span>,
     {
         <span class="kw">struct</span> <span class="ident">Reset</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CurrentRunner</span>);
 
@@ -1693,7 +1693,7 @@
     }
 }
 
-<span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">hide_lt</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(<span class="ident">p</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> (<span class="ident">SpawnLocal</span> <span class="op">+</span> <span class="lifetime">&#39;a</span>)) <span class="op">-&gt;</span> <span class="kw-2">*</span><span class="kw-2">mut</span> (<span class="ident">SpawnLocal</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>) {
+<span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">hide_lt</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(<span class="ident">p</span>: <span class="kw-2">*</span><span class="kw-2">mut</span> (<span class="ident">SpawnLocal</span> <span class="op">+</span> <span class="lifetime">&#39;a</span>)) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="kw-2">mut</span> (<span class="ident">SpawnLocal</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>) {
     <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">mem</span>;
     <span class="ident">mem</span>::<span class="ident">transmute</span>(<span class="ident">p</span>)
 }
@@ -1701,18 +1701,18 @@
 <span class="comment">// ===== impl RunTimeoutError =====</span>
 
 <span class="kw">impl</span> <span class="ident">RunTimeoutError</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">timeout</span>: <span class="ident">bool</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">timeout</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">RunTimeoutError</span> { <span class="ident">timeout</span> }
     }
 
     <span class="doccomment">/// Returns `true` if the error was caused by the operation timing out.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_timeout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_timeout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">timeout</span>
     }
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">tokio_executor</span>::<span class="ident">EnterError</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">RunTimeoutError</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="kw">_</span>: <span class="ident">tokio_executor</span>::<span class="ident">EnterError</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="kw">_</span>: <span class="ident">tokio_executor</span>::<span class="ident">EnterError</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">RunTimeoutError</span>::<span class="ident">new</span>(<span class="bool-val">false</span>)
     }
 }
@@ -1721,15 +1721,15 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="ident">BlockError</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Returns the error yielded by the future being blocked on</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_inner</span>(<span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_inner</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">inner</span>
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">tokio_executor</span>::<span class="ident">EnterError</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">BlockError</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="kw">_</span>: <span class="ident">tokio_executor</span>::<span class="ident">EnterError</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="kw">_</span>: <span class="ident">tokio_executor</span>::<span class="ident">EnterError</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">BlockError</span> { <span class="ident">inner</span>: <span class="prelude-val">None</span> }
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><aside id="help" class="hidden"><div><h1 class="hidden">Help</h1><div class="shortcuts"><h2>Keyboard Shortcuts</h2><dl><dt><kbd>?</kbd></dt><dd>Show this help dialog</dd><dt><kbd>S</kbd></dt><dd>Focus the search field</dd><dt><kbd>↑</kbd></dt><dd>Move up in search results</dd><dt><kbd>↓</kbd></dt><dd>Move down in search results</dd><dt><kbd>↹</kbd></dt><dd>Switch tab</dd><dt><kbd>&#9166;</kbd></dt><dd>Go to active search result</dd><dt><kbd>+</kbd></dt><dd>Expand all sections</dd><dt><kbd>-</kbd></dt><dd>Collapse all sections</dd></dl></div><div class="infos"><h2>Search Tricks</h2><p>Prefix searches with a type followed by a colon (e.g., <code>fn:</code>) to restrict the search to a given type.</p><p>Accepted types are: <code>fn</code>, <code>mod</code>, <code>struct</code>, <code>enum</code>, <code>trait</code>, <code>type</code>, <code>macro</code>, and <code>const</code>.</p><p>Search functions by type signature (e.g., <code>vec -> usize</code> or <code>* -> vec</code>)</p><p>Search multiple things at once by splitting your query with comma (e.g., <code>str,u8</code> or <code>String,struct:Vec,test</code>)</p></div></div></aside><script>window.rootPath = "../../";window.currentCrate = "tokio_current_thread";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "tokio_current_thread";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

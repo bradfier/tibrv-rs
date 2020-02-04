@@ -6,5 +6,4 @@ implementors["mio"] = [];
             } else {
                 window.pending_implementors = implementors;
             }
-        
-})()
+        })()

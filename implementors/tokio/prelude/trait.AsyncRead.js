@@ -6,5 +6,4 @@ implementors["tokio"] = [];
             } else {
                 window.pending_implementors = implementors;
             }
-        
-})()
+        })()
