@@ -7,6 +7,19 @@ documented in this file.
 
 This project adheres to `Semantic Versioning <https://semver.org/>`_.
 
+`0.6.0`_ (2020-02-04)
+---------------------
+
+Bug Fixes
+~~~~~~~~~
+
+* Updated version of ``bindgen`` to allow building on Rust 1.39 and greater.
+* Changed treatment of enums from ``tibrv.h`` in ``tibrv-sys``, see `801b6ae <https://github.com/bradfier/tibrv-rs/commit/801b6ae28421da6a9f87d834206dcfeef686df39>`_
+  for explanation. This shouldn't be a change visible outside the ``-sys`` crate,
+  but may affect you if you use this crate directly. (This is the reasoning for the full
+  version bump.)
+
+
 `0.5.0`_ (2019-07-01)
 ---------------------
 
@@ -78,6 +91,7 @@ Initial public release.
 * First usable release on `crates.io <https://crates.io/crates/tibrv>`_.
 
 
+.. _`0.6.0`: https://github.com/bradfier/tibrv-rs/compare/v0.5.0...v0.6.0
 .. _`0.5.0`: https://github.com/bradfier/tibrv-rs/compare/v0.4.0...v0.5.0
 .. _`0.4.0`: https://github.com/bradfier/tibrv-rs/compare/v0.3.0...v0.4.0
 .. _`0.3.0`: https://github.com/bradfier/tibrv-rs/compare/v0.2.0...v0.3.0
