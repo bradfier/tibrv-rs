@@ -3,6 +3,12 @@
 use failure::*;
 use std::fmt;
 use tibrv_sys::{tibrv_status, tibrv_u8};
+use tibrv_sys::{
+    TIBRV_OK,
+    TIBRV_INIT_FAILURE, TIBRV_INVALID_TRANSPORT, TIBRV_SERVICE_NOT_FOUND,
+    TIBRV_NETWORK_NOT_FOUND, TIBRV_DAEMON_NOT_FOUND, TIBRV_DAEMON_NOT_CONNECTED,
+};
+
 
 pub(crate) trait TibrvResult {
     fn and_then<U, F: FnOnce(Self) -> Result<U, TibrvError>>(
@@ -106,12 +112,12 @@ impl From<Context<ErrorKind>> for TibrvError {
 impl From<tibrv_status> for ErrorKind {
     fn from(status: tibrv_status) -> Self {
         match status {
-            tibrv_status::TIBRV_INIT_FAILURE => ErrorKind::RvInitFailure,
-            tibrv_status::TIBRV_INVALID_TRANSPORT
-            | tibrv_status::TIBRV_SERVICE_NOT_FOUND
-            | tibrv_status::TIBRV_NETWORK_NOT_FOUND
-            | tibrv_status::TIBRV_DAEMON_NOT_FOUND
-            | tibrv_status::TIBRV_DAEMON_NOT_CONNECTED => ErrorKind::TransportError,
+            TIBRV_INIT_FAILURE => ErrorKind::RvInitFailure,
+            TIBRV_INVALID_TRANSPORT
+            | TIBRV_SERVICE_NOT_FOUND
+            | TIBRV_NETWORK_NOT_FOUND
+            | TIBRV_DAEMON_NOT_FOUND
+            | TIBRV_DAEMON_NOT_CONNECTED => ErrorKind::TransportError,
             _ => ErrorKind::UnknownError(status),
         }
     }
@@ -127,13 +133,13 @@ impl TibrvResult for tibrv_status {
         f: F,
     ) -> Result<U, TibrvError> {
         match self {
-            tibrv_status::TIBRV_OK => f(self),
+            TIBRV_OK => f(self),
             _ => Err(ErrorKind::from(self).into()),
         }
     }
     fn map<U, F: FnOnce(Self) -> U>(self, f: F) -> Result<U, TibrvError> {
         match self {
-            tibrv_status::TIBRV_OK => Ok(f(self)),
+            TIBRV_OK => Ok(f(self)),
             _ => Err(ErrorKind::from(self).into()),
         }
     }

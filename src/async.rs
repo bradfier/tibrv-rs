@@ -49,7 +49,7 @@ impl AsyncQueue {
         let mut ptr: tibrvQueueHook = unsafe { ::std::mem::zeroed() };
         let result = unsafe { tibrvQueue_GetHook(self.queue.inner, &mut ptr) };
         match result {
-            tibrv_status::TIBRV_OK => ptr.is_some(),
+            TIBRV_OK => ptr.is_some(),
             _ => false,
         }
     }
@@ -78,7 +78,7 @@ impl AsyncQueue {
                 l_ptr as *mut ::std::os::raw::c_void,
             )
         };
-        if result != tibrv_status::TIBRV_OK {
+        if result != TIBRV_OK {
             Err(ErrorKind::AsyncRegError)?;
         };
 

@@ -15,6 +15,8 @@ fn main() {
     let bindings = bindgen::Builder::default()
         .rust_target(bindgen::RustTarget::Stable_1_19)
         .header("wrapper.h")
+        .prepend_enum_name(false)
+        .newtype_enum("tibrv.*")
         .clang_arg(format!("-I{}/include/tibrv", tibrv))
         .generate()
         .expect("Unable to generate bindings.");

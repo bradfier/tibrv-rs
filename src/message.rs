@@ -242,7 +242,7 @@ impl Msg {
         let mut ptr: *const c_char = unsafe { mem::zeroed() };
         unsafe {
             let result = tibrvMsg_GetSendSubject(self.inner, &mut ptr);
-            if result == tibrv_status::TIBRV_NOT_FOUND {
+            if result == TIBRV_NOT_FOUND {
                 return Ok(None);
             } else {
                 result.map(|_| ())?;
@@ -266,7 +266,7 @@ impl Msg {
         let mut ptr: *const c_char = unsafe { mem::zeroed() };
         unsafe {
             let result = tibrvMsg_GetReplySubject(self.inner, &mut ptr);
-            if result == tibrv_status::TIBRV_NOT_FOUND {
+            if result == TIBRV_NOT_FOUND {
                 return Ok(None);
             } else {
                 result.map(|_| ())?;

@@ -391,7 +391,7 @@ mod tests {
         assert!(req.is_err());
         let _ = req.map_err(|e| {
             assert_eq!(
-                ErrorKind::UnknownError(tibrv_status::TIBRV_TIMEOUT),
+                ErrorKind::UnknownError(TIBRV_TIMEOUT),
                 e.kind()
             )
         });
